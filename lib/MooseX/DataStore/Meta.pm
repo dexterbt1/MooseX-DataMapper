@@ -37,6 +37,12 @@ has 'attribute_to_column' => (
     default         => sub { {} },
 );
 
+has 'column_to_attribute' => (
+    isa             => 'HashRef[Str]',
+    is              => 'rw',
+    default         => sub { {} },
+);
+
 sub configure {
     my ($self, %p) = @_;
     my $metaclass = $self;
@@ -46,6 +52,7 @@ sub configure {
         if ($attr->does('MooseX::DataStore::Meta::Attribute::Trait::Persistent')) {
             push @{$metaclass->persistent_attributes}, $attr;
             $metaclass->attribute_to_column->{$attr->name} = $attr->column;
+            $metaclass->column_to_attribute->{$attr->column} = $attr->name;
         }
     }
 }

@@ -27,15 +27,19 @@ is $john->id, undef;
 
 $ds->flush;
 isnt $john->id, undef;
+is $john->name, 'John';
 
 ok $john->id > 0;
 
-my $people = $ds->find( ['Person'], -where => { name => { -like => 'Jo%' } }, -limit => 1 );
+my $people = $ds->query('Person')
+                ->as_array;
 is ref($people), 'ARRAY';
 is scalar(@$people), 1;
 my $jo = $people->[0];
 
-is $jo, $john;
+is $jo->name, 'John';
+
+is $jo, $john; # same reference
 
 ok 1;
 ok 1;
