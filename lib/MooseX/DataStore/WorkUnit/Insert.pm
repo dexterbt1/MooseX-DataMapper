@@ -22,7 +22,8 @@ sub execute {
     # automatically assign the primary key field with the last insert id
     my $pk_field = $t->meta->primary_key->name;
     $t->$pk_field( $dbixs->last_insert_id(undef, undef, $table, undef) );
-    $self->datastore->add( $t ); # add again, ensure this is cached for future requests
+    # cache in identity map
+    $self->datastore->set_idmap_cached( $t->meta->name, $t->pk, $t );
 }
 
 1;

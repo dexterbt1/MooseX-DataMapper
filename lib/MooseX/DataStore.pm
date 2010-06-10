@@ -10,6 +10,7 @@ use Carp;
 use MooseX::DataStore::Meta;
 use MooseX::DataStore::QuerySet;
 use MooseX::DataStore::WorkUnit::Insert;
+use MooseX::DataStore::WorkUnit::Update;
 
 
 has 'dbh' => (
@@ -57,21 +58,20 @@ sub connect {
 }
 
 
-sub add {
-    my $self = shift;
-    foreach my $i (@_) {
-        my $idmap_id = $self->get_idmap_id( $i->meta->name, $i->pk );
-        if (defined($idmap_id) and not(exists $self->identity_map->{$idmap_id})) {
-            weaken $i;
-            $self->identity_map->{$idmap_id} = $i;
-        }
-        else {
-            # not pk yet
-            push @{$self->work_uncommitted}, 
-                MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i );
-            $i->datastore( $self );
-        }
+sub save {
+    my ($self, $i) = @_;
+    if (defined $i->pk) {
+        # update
+        push @{$self->work_uncommitted},
+            MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i );
     }
+    else {
+        # not pk yet, insert
+        push @{$self->work_uncommitted}, 
+            MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i );
+        $i->datastore( $self );
+    }
+    return $self;
 }
 
 
@@ -115,7 +115,13 @@ sub set_idmap_cached {
     my $idmap_id = $self->get_idmap_id( $class, $pk );
     return if (not defined $idmap_id);
     $self->identity_map->{$idmap_id} = $o;
+    weaken $self->identity_map->{$idmap_id};
     return $o;
+}
+
+sub DEMOLISH {
+    my ($self) = @_;
+    $self->flush;
 }
 
 

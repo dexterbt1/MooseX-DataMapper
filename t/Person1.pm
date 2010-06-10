@@ -1,6 +1,5 @@
 package Person;
 use strict;
-use warnings;
 use MooseX::DataStore;
 use Moose -traits => qw/DataObject/;
 with 'MooseX::DataStore::Class';
@@ -23,6 +22,32 @@ __PACKAGE__->meta->configure(
     -table              => 'person',
     -primary_key        => 'id',
 );
+
+=cut
+
+package Address;
+use strict;
+use MooseX::DataStore;
+use Moose -traits => qw/DataObject/;
+with 'MooseX::DataStore::Class';
+
+# implicit autoincrement primary key id is generated here
+
+has 'person_id' => (
+    traits              => [qw/Persistent/],
+    column              => 'person_id',
+    isa                 => 'Int',
+    is                  => 'rw',
+);
+
+has 'person' => (
+    traits              => [qw/ForeignKey/],
+    reference_using     => ['person_id'],
+    isa                 => 'Person',
+    is                  => 'rw',
+);
+
+=cut
 
 
 

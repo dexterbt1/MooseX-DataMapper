@@ -21,7 +21,7 @@ is $john->id, undef;
 
 is $john->datastore, undef;
 
-$ds->add($john);
+$ds->save($john);
 is $john->datastore, $ds;
 is $john->id, undef;
 
@@ -31,8 +31,9 @@ is $john->name, 'John';
 
 ok $john->id > 0;
 
-my $people = $ds->query('Person')
-                ->as_array;
+my $people;
+
+$people = $ds->query('Person')->rows;
 is ref($people), 'ARRAY';
 is scalar(@$people), 1;
 my $jo = $people->[0];
@@ -41,9 +42,57 @@ is $jo->name, 'John';
 
 is $jo, $john; # same reference
 
-ok 1;
-ok 1;
+# update
 
+$jo->name('Johnny');
+$ds->save($jo);
+
+my $j = $ds->query('Person')->get($jo->pk);
+is $j->name, 'Johnny';
+
+is $j, $jo;
+is $j, $john;
+
+my $bob = Person->new( name => 'Bob' );
+$ds->save($bob)->flush;
+
+$people = $ds->query('Person')->rows;
+is scalar(@$people), 2;
+
+$people = $ds->query('Person')->filter({ name => { -like => "%ohn%" } })->rows;
+is scalar(@$people), 1;
+is $j->name, 'Johnny';
+is $j, $john;
+is $j, $jo;
+
+#$people = $ds->query('Person')
+#             ->filter({ name => { -like => "%ohn%" } })
+#             ->OR
+#             ->filter({ id => { -in => [ 1, 2 ] } })
+#             ->rows;
+
+=cut
+
+$ds->select('Address|a', 'Person|p')
+   ->where({ 'a.person_id' => 'p.id' })
+   ->AND
+   ->where({ 'p.name' => { -like => "Bo%" } })
+   ->limit(1)
+   ->rows;
+
+$ds->query('Address')
+   ->count('id')
+   ->row;
+
+$ds->query('Address')
+   ->count('id')
+   ->group_by('person_id')
+   ->rows;
+
+=cut
+
+
+ok 1;
 
 __END__
 
