@@ -8,7 +8,6 @@ use Scalar::Util qw/weaken/;
 use Carp;
 
 use MooseX::DataStore::Meta;
-use MooseX::DataStore::QuerySet;
 use MooseX::DataStore::WorkUnit::Insert;
 
 
@@ -35,7 +34,7 @@ has 'dbixs' => (
 );
 
 has 'identity_map' => (
-    isa             => 'HashRef[MooseX::DataStore::Meta::Class::Trait::DataObject]',
+    isa             => 'HashRef[Str]',
     is              => 'rw',
     default         => sub { {} },
 );
@@ -60,9 +59,8 @@ sub connect {
 sub add {
     my $self = shift;
     foreach my $i (@_) {
-        my $idmap_id = $self->get_idmap_id( $i->meta->name, $i->pk );
+        my $idmap_id = $self->get_idmap_id( $i );
         if (defined($idmap_id) and not(exists $self->identity_map->{$idmap_id})) {
-            weaken $i;
             $self->identity_map->{$idmap_id} = $i;
         }
         else {
@@ -87,9 +85,7 @@ sub commit {
 }
 
 
-sub query {
-    my ($self, @class_spec) = @_;
-    return MooseX::DataStore::QuerySet->new( datastore => $self, class_spec => \@class_spec );
+sub find {
 }
 
 
@@ -97,25 +93,10 @@ sub query {
 
 
 sub get_idmap_id {
-    my ($self, $class, $pk) = @_;
+    my ($self, $i) = @_;
+    my $pk = $i->pk;
     return if (not defined $pk);
-    return sprintf("%s{%d}", $class, $pk);
-}
-
-sub get_idmap_cached {
-    my ($self, $class, $pk) = @_;
-    my $idmap_id = $self->get_idmap_id( $class, $pk );
-    return if (not defined $idmap_id);
-    my $o = exists($self->identity_map->{$idmap_id}) ? $self->identity_map->{$idmap_id} : undef;
-    return $o;
-}
-
-sub set_idmap_cached {
-    my ($self, $class, $pk, $o) = @_;
-    my $idmap_id = $self->get_idmap_id( $class, $pk );
-    return if (not defined $idmap_id);
-    $self->identity_map->{$idmap_id} = $o;
-    return $o;
+    sprintf("%s-%d-%d", $i->meta->name, $$, $i->pk);
 }
 
 

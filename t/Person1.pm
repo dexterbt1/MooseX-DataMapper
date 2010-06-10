@@ -1,7 +1,7 @@
 package Person;
 use strict;
 use warnings;
-use MooseX::DataStore;
+use MooseX::DataStore::Meta;
 use Moose -traits => qw/DataObject/;
 with 'MooseX::DataStore::Class';
 
