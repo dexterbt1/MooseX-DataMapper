@@ -59,7 +59,14 @@ sub connect {
 }
 
 
-sub save_deep {
+sub save {
+    my ($self, $i) = @_;
+    $self->_save_deep($i);
+    $self->flush;
+    return $i;
+}
+
+sub _save_deep {
     my ($self, $i) = @_;
     # traverse object tree, saves the object graph
     foreach my $i_fk_attr (@{$i->meta->foreignkey_attributes}) {
@@ -68,7 +75,7 @@ sub save_deep {
         my $i_fk_attr_name = $i_fk_attr->name;
         my $i_fk = $i->$i_fk_attr_name;
         if (defined($i_fk)) {
-            $self->save_deep($i_fk);
+            $self->_save_deep($i_fk);
             $self->enqueue_work(
                 # this will set the proper foreign key ids on the referred objects
                 MooseX::DataStore::WorkUnit::CodeHook->new( datastore => $self, hook => sub {
@@ -77,12 +84,12 @@ sub save_deep {
             );
         }
     }
-    $self->save($i);
+    $self->_save_one($i);
     return $i;
 }
 
 
-sub save {
+sub _save_one {
     my ($self, $i) = @_;
     eval {
         if (defined $i->pk) {

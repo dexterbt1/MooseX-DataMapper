@@ -32,7 +32,8 @@ sub get_data_hash {
         if ( ($metaclass->primary_key->name eq $attr_name) and (not defined $value) ) {
             next; # skip undefined primary keys
         }
-        my $k = $self->datastore->dbh->quote_identifier( $column );
+        #my $k = $self->datastore->dbh->quote_identifier( $column );
+        my $k = $column;
         $o->{$k} = $value;
     }
     return $o;

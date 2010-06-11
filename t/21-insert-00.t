@@ -25,10 +25,6 @@ is $john->id, undef;
 is $john->datastore, undef;
 
 $ds->save($john);
-is $john->datastore, $ds;
-is $john->id, undef;
-
-$ds->flush;
 isnt $john->id, undef;
 is $john->name, 'John';
 
@@ -58,7 +54,6 @@ is $j, $john;
 
 my $bob = Person->new( name => 'Bob' );
 $ds->save($bob);
-$ds->flush;
 
 $people = $ds->find('Person')->rows;
 is scalar(@$people), 2;
@@ -91,15 +86,14 @@ my $johns_addr_copy = $ds->find('Address')->get(1);
 is $johns_addr_copy, $johns_addr;
 
 is $johns_addr->person_id, $john->pk;
-is $johns_addr->person, $john;
-is $johns_addr->person, $jo;
+isnt $johns_addr->person, $john;
+isnt $johns_addr->person, $jo;
 
 my $matts_addr = Address->new(
     city    => "London",
     person  => Person->new( name => "Matt" ),
 );
-$ds->save_deep($matts_addr);
-$ds->flush;
+$ds->save($matts_addr);
 
 isnt $matts_addr->pk, undef;
 isnt $matts_addr->person_id, undef;
@@ -122,6 +116,18 @@ my $addr = $places->[0];
 isnt $addr->person, undef;
 isa_ok $addr->person, 'Person';
 isnt $addr->person, $matt;
+
+$matt = $addr->person;
+$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->rows;
+
+$addr = $places->[0];
+isnt $addr->person, $matt;
+
+$addr->person( Person->new( name => "James" ) );
+$ds->save($addr);
+
+is $addr->person->name, 'James';
+isnt $addr->person_id, undef;
 
 ok 1;
 

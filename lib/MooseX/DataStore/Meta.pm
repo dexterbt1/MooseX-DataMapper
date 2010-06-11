@@ -136,6 +136,7 @@ sub datastore_class_setup {
         elsif ($attr->does('MooseX::DataStore::Meta::Attribute::Trait::ForeignKey')) {
             push @{$metaclass->foreignkey_attributes}, $attr;
             my $ref_from = $attr->ref_from;
+            my $ref_from_attr = $metaclass->get_attribute($ref_from);
             my $ref_to_attr = $attr->ref_to_attr;
             my $ref_to_attr_name = $ref_to_attr->name;
             my $ref_to_class = $ref_to_attr->associated_class->name;
@@ -146,16 +147,25 @@ sub datastore_class_setup {
                 if (scalar @_ == 2) { # this is a set operation
                     ($fk->isa($ref_to_class))
                         or croak "Failed ForeignKey constraint, expects $ref_to_class";
-                    $o->$ref_from( $fk->$ref_to_attr_name );
+                    my $fk_id = $fk->$ref_to_attr_name;
+                    if (defined $fk_id) {
+                        $o->$ref_from( $fk_id );
+                    }
+                    else {
+                        # undef ids of foreign key assignments should clear the ref_from attribute
+                        $ref_from_attr->clear_value($o);
+                    }
                     return $accessor->(@_);
                 }
                 else {
                     my $fk_id = $o->$ref_from;
                     my $v = $attr->get_value($o);
                     if (defined($fk_id) && not(defined $v)) {
-                        $fk = $o->datastore->find($ref_to_class)->get($fk_id);
+                        $fk = $o->datastore->find($ref_to_class)->get_nocache($fk_id);
                         $attr->set_value($o, $fk); # cache!
                         return $fk;
+                    }
+                    elsif (defined($v) && not(defined $fk_id)) {
                     }
                 }
                 return $accessor->(@_);

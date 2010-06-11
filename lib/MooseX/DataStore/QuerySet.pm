@@ -88,16 +88,17 @@ sub _get_resultset {
     if ($@) {
         croak "Failed SQL statement:\n\t$select_stmt".join("\n\t",@where_bind);
     }
-    print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
+    #print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
     return $rs;
 }
 
 
 sub _new_object {
-    my ($self, $class, $row) = @_;
+    my ($self, $class, $row, $cached) = @_;
+    if (scalar @_ == 3) { $cached=1; }
     my $pk_rowfield = $class->meta->primary_key->column;
     my $pk = $row->{$pk_rowfield};
-    my $o = $self->datastore->get_idmap_cached( $class, $pk );
+    my $o = ($cached) ? $self->datastore->get_idmap_cached( $class, $pk ) : undef;
     {
         my $args = {};
         foreach my $col (keys %$row) {
@@ -116,6 +117,10 @@ sub _new_object {
             $o = $class->new(%$args);
             $self->datastore->set_idmap_cached( $class, $pk, $o );
             $o->datastore( $self->datastore );
+        }
+        # force clear cached foreign key values
+        foreach my $fk_attr (@{$class->meta->foreignkey_attributes}) {
+            $fk_attr->clear_value($o);
         }
     }
     return $o;
@@ -195,14 +200,24 @@ sub offset {
 # queryset methods that return row(s)
 
 
-sub get {
-    my ($self, $pk) = @_;
+sub _get_row {
+    my ($self, $cached, $pk) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     my $pk_field = $class->meta->primary_key->name;
     $self->filter({$pk_field => $pk})->limit(1);
     my $rs = $self->_get_resultset;
     my $row = $rs->hash;
-    return $self->_new_object( $class, $row );
+    return $self->_new_object( $class, $row, $cached );
+}
+
+sub get {
+    my ($self, $pk) = @_;
+    return $self->_get_row(1, $pk);
+}
+
+sub get_nocache {
+    my ($self, $pk) = @_;
+    return $self->_get_row(0, $pk);
 }
 
 
