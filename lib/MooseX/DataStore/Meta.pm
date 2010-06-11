@@ -12,8 +12,9 @@ package Moose::Meta::Attribute::Custom::Trait::Persistent;
 sub register_implementation {'MooseX::DataStore::Meta::Attribute::Trait::Persistent'}
 
 
-package MooseX::DataStore::Meta::Class::Trait::DataObject;
+package MooseX::DataStore::Meta::Class::Trait::DataStore::Class;
 use Moose::Role;
+use MooseX::DataStore::Class;
 
 has 'primary_key' => (
     is              => 'rw',
@@ -55,11 +56,12 @@ sub configure {
             $metaclass->column_to_attribute->{$attr->column} = $attr->name;
         }
     }
+    MooseX::DataStore::Class->meta->apply($metaclass);
 }
 
 
-package Moose::Meta::Class::Custom::Trait::DataObject;
-sub register_implementation { 'MooseX::DataStore::Meta::Class::Trait::DataObject' }
+package Moose::Meta::Class::Custom::Trait::DataStore::Class;
+sub register_implementation { 'MooseX::DataStore::Meta::Class::Trait::DataStore::Class' }
 
 
 1;

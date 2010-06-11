@@ -66,9 +66,11 @@ is $j, $john;
 is $j, $jo;
 
 $people = $ds->query('Person')
-             ->filter('person.name like ?', 'john%')
-#             ->OR
-#             ->filter({ id => { -in => [ 1, 2 ] } })
+             #->filter('name like ?', 'john%')
+             #->OR
+             ->filter({ id => { -in => [ 1, 2 ] } })
+             ->limit(1)
+             ->offset(1)
              ->rows;
 
 =cut

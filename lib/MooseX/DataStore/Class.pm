@@ -3,11 +3,16 @@ use strict;
 use Moose::Role;
 use Carp;
 
-has 'datastore' => (
-    isa             => 'MooseX::DataStore',
-    is              => 'rw',
-    weak_ref        => 1,
-);
+# inside-out 
+my $datastore_of = { };
+
+sub datastore {
+    my $self = shift @_;
+    if (@_) {
+        $datastore_of->{"$self"} = shift @_;
+    }
+    return $datastore_of->{"$self"};
+}
 
 sub pk {
     my $self = shift @_;
@@ -22,7 +27,7 @@ sub get_data_hash {
     my $table_alias = $t_alias || $metaclass->table;
     foreach my $attr (@{$metaclass->persistent_attributes}) {
         my $attr_name = $attr->name;
-        my $column = $metaclass->attribute_to_column->{$attr_name};
+        my $column = $attr->column;
         my $value = $self->$attr_name;
         if ( ($metaclass->primary_key->name eq $attr_name) and (not defined $value) ) {
             next; # skip undefined primary keys

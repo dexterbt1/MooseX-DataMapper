@@ -1,8 +1,7 @@
 package Person;
 use strict;
 use MooseX::DataStore;
-use Moose -traits => qw/DataObject/;
-with 'MooseX::DataStore::Class';
+use Moose -traits => qw/DataStore::Class/;
 
 has 'id' => (
     traits              => [qw/Persistent/],
@@ -45,6 +44,10 @@ has 'person' => (
     reference_using     => ['person_id'],
     isa                 => 'Person',
     is                  => 'rw',
+);
+
+__PACKAGE__->meta->configure(
+    -table              => 'address',
 );
 
 =cut

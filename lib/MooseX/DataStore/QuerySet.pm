@@ -38,6 +38,11 @@ has 'sql_limit' => (
     is              => 'rw',
 );
 
+has 'sql_offset' => (
+    isa             => 'Int',
+    is              => 'rw',
+);
+
 has 'filters' => (
     isa             => 'ArrayRef[MooseX::DataStore::QuerySet::Filter]',
     is              => 'rw',
@@ -70,15 +75,15 @@ sub _get_resultset {
         $where_stmt .= join('','(',$filter->sql_stmt,')');
         push @where_bind, @{$filter->bind_params};
     }
-    my ($select_stmt) = $ds->sqlabs->select( $table, $self->_get_columns, $where_stmt, undef, $self->sql_limit );
+    my ($select_stmt) = $ds->sqlabs->select( $table, $self->_get_columns, $where_stmt, undef, $self->sql_limit, $self->sql_offset );
     my $rs;
     eval {
         $rs = $dbixs->query($select_stmt, @where_bind);
     };
     if ($@) {
-        croak "Failed SQL statement:\n\t$select_stmt";
+        croak "Failed SQL statement:\n\t$select_stmt".join("\n\t",@where_bind);
     }
-    #print STDERR $select_stmt,"\n";
+    #print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
     return $rs;
 }
 
@@ -120,10 +125,17 @@ sub _new_object {
 
 sub filter {
     my ($self, $where_clause, @bind) = @_;
+    my $clause = $where_clause;
+    my $bind_params = \@bind;
+    if (ref($where_clause) eq 'HASH') {
+        ($clause, my @b) = $self->datastore->sqlabs->where($where_clause);
+        $clause =~ s[^\s*WHERE\s*][];
+        $bind_params = \@b;
+    }
     push @{$self->filters}, MooseX::DataStore::QuerySet::Filter->new( 
         queryset    => $self,
-        clause      => $where_clause,
-        bind_params => \@bind,
+        clause      => $clause,
+        bind_params => $bind_params,
     );
     return $self;
 }
@@ -131,18 +143,26 @@ sub filter {
 
 sub limit {
     my ($self, $limit) = @_;
+    # TODO: sql-abstract
     $self->sql_limit($limit);
     return $self;
 }
 
 
-# queryset methods that return rows
+sub offset {
+    my ($self, $offset) = @_;
+    $self->sql_offset($offset);
+    return $self;
+}
+
+
+# queryset methods that return row(s)
 
 sub get {
     my ($self, $pk) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     my $pk_field = $class->meta->primary_key->name;
-    $self->filter("$pk_field = ?", $pk)->limit(1);
+    $self->filter({$pk_field => $pk})->limit(1);
     my $rs = $self->_get_resultset;
     my $row = $rs->hash;
     return $self->_new_object( $class, $row );
