@@ -27,21 +27,28 @@ use strict;
 use MooseX::DataStore;
 use Moose -traits => qw/DataStore::Class/;
 
-# implicit autoincrement primary key id is generated here
+# implicit primary key id is generated here
 
-#has 'person_id' => (
-#    traits              => [qw/Persistent/],
-#    column              => 'person_id',
-#    isa                 => 'Int',
-#    is                  => 'rw',
-#);
+has 'city' => (
+    traits              => [qw/Persistent/],
+    column              => 'city',
+    isa                 => 'Str',    
+    is                  => 'rw',
+);
 
-#has 'person' => (
-#    traits              => [qw/ForeignKey/],
-#    referenced_using    => ['person_id'],
-#    isa                 => 'Person',
-#    is                  => 'rw',
-#);
+has 'person_id' => (
+    traits              => [qw/Persistent/],
+    column              => 'person_uid',
+    isa                 => 'Int',
+    is                  => 'rw',
+);
+
+has 'person' => (
+    traits              => [qw/ForeignKey/],
+    ref_from            => 'person_id',
+    ref_to              => [qw/Person id/],
+    is                  => 'rw',
+);
 
 __PACKAGE__->meta->datastore_class_setup(
     -table              => 'address',

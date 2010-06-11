@@ -41,7 +41,7 @@ has 'identity_map' => (
     default         => sub { {} },
 );
 
-has 'work_uncommitted' => (
+has 'work_unflushed' => (
     isa             => 'ArrayRef[MooseX::DataStore::WorkUnit]',
     is              => 'rw',
     default         => sub { [] },
@@ -58,31 +58,49 @@ sub connect {
 }
 
 
+sub save_deep {
+    my ($self, $i) = @_;
+    foreach my $i_fk_attr (@{$i->meta->foreignkey_attributes}) {
+        # traverse object tree, saves the object graph
+        my $i_fk_attr_name = $i_fk_attr->name;
+        my $i_fk = $i->$i_fk_attr_name;
+        if (defined($i_fk)) {
+            $self->save_deep($i_fk);
+        }
+    }
+    $self->save($i);
+    return $i;
+}
+
+
 sub save {
     my ($self, $i) = @_;
-    if (defined $i->pk) {
-        # update
-        push @{$self->work_uncommitted},
-            MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i );
-    }
-    else {
-        # not pk yet, insert
-        push @{$self->work_uncommitted}, 
-            MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i );
-        $i->datastore( $self );
-    }
-    return $self;
+    eval {
+        if (defined $i->pk) {
+            # update
+            push @{$self->work_unflushed},
+                MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i );
+        }
+        else {
+            # not pk yet, insert
+            $i->datastore( $self );
+            push @{$self->work_unflushed}, 
+                MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i );
+        }
+    };
+    if ($@) { croak $@; }
+    return $i;
 }
 
 
 sub flush {
     my ($self) = @_;
-    while (my $work = shift @{$self->work_uncommitted}) {
+    while (my $work = shift @{$self->work_unflushed}) {
         $work->execute;
     }
 }
 
-sub query {
+sub find {
     my ($self, @class_spec) = @_;
     return MooseX::DataStore::QuerySet->new( datastore => $self, class_spec => \@class_spec );
 }

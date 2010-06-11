@@ -20,7 +20,7 @@ has 'class_spec' => (
         (scalar @$v > 0)
             or croak "Invalid query class_spec";
         foreach my $spec (@$v) {
-            ($spec->does('MooseX::DataStore::Meta::Role'))
+            ($spec->can('does') && $spec->does('MooseX::DataStore::Meta::Role'))
                 or croak "$spec is not a valid persistent class";
         }
     },
