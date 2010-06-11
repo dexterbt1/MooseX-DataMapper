@@ -102,6 +102,7 @@ sub _new_object {
         my $args = {};
         foreach my $col (keys %$row) {
             my $attr_name = $class->meta->column_to_attribute->{$col};
+            next if (not defined $attr_name); # ignore non-member columns
             my $row_val = $row->{$col};
             next if (not defined $row_val);
             if (not $o) {
@@ -114,6 +115,7 @@ sub _new_object {
         if (not $o) {
             $o = $class->new(%$args);
             $self->datastore->set_idmap_cached( $class, $pk, $o );
+            $o->datastore( $self->datastore );
         }
     }
     return $o;

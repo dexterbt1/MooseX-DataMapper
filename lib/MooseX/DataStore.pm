@@ -9,6 +9,7 @@ use Carp;
 
 use MooseX::DataStore::Meta;
 use MooseX::DataStore::QuerySet;
+use MooseX::DataStore::WorkUnit::CodeHook;
 use MooseX::DataStore::WorkUnit::Insert;
 use MooseX::DataStore::WorkUnit::Update;
 
@@ -60,12 +61,20 @@ sub connect {
 
 sub save_deep {
     my ($self, $i) = @_;
+    # traverse object tree, saves the object graph
     foreach my $i_fk_attr (@{$i->meta->foreignkey_attributes}) {
-        # traverse object tree, saves the object graph
+        my $i_fk_ref_to_attr_name = $i_fk_attr->ref_to_attr->name;
+        my $i_fk_ref_from = $i_fk_attr->ref_from;
         my $i_fk_attr_name = $i_fk_attr->name;
         my $i_fk = $i->$i_fk_attr_name;
         if (defined($i_fk)) {
             $self->save_deep($i_fk);
+            $self->enqueue_work(
+                # this will set the proper foreign key ids on the referred objects
+                MooseX::DataStore::WorkUnit::CodeHook->new( datastore => $self, hook => sub {
+                    $i->$i_fk_ref_from( $i_fk->$i_fk_ref_to_attr_name );
+                })
+            );
         }
     }
     $self->save($i);
@@ -78,14 +87,16 @@ sub save {
     eval {
         if (defined $i->pk) {
             # update
-            push @{$self->work_unflushed},
-                MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i );
+            $self->enqueue_work(
+                MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i )
+            );
         }
         else {
             # not pk yet, insert
             $i->datastore( $self );
-            push @{$self->work_unflushed}, 
-                MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i );
+            $self->enqueue_work(
+                MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i )
+            );
         }
     };
     if ($@) { croak $@; }
@@ -107,6 +118,12 @@ sub find {
 
 
 # ============================
+
+
+sub enqueue_work {
+    my ($self, $work) = @_;
+    push @{$self->work_unflushed}, $work;
+}
 
 
 sub get_idmap_id {

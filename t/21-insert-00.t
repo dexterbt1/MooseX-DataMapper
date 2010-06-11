@@ -102,11 +102,28 @@ $ds->save_deep($matts_addr);
 $ds->flush;
 
 isnt $matts_addr->pk, undef;
+isnt $matts_addr->person_id, undef;
 $people = $ds->find('Person')->filter("name = ?", "Matt")->rows;
 my $matt = shift @$people;
 ok defined($matt);
 
 is $matt, $matts_addr->person;
+
+# =================================
+# start a new session, this means the identity map is cleared
+
+$ds = MooseX::DataStore->connect($dbh);
+
+my $places;
+$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->rows;
+is scalar @$places, 1;
+
+my $addr = $places->[0];
+isnt $addr->person, undef;
+isa_ok $addr->person, 'Person';
+isnt $addr->person, $matt;
+
+ok 1;
 
 =cut
 

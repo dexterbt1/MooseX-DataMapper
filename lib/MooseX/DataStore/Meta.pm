@@ -139,13 +139,26 @@ sub datastore_class_setup {
             my $ref_to_attr = $attr->ref_to_attr;
             my $ref_to_attr_name = $ref_to_attr->name;
             my $ref_to_class = $ref_to_attr->associated_class->name;
-            $metaclass->add_after_method_modifier( $attr->name, sub {
+            # replace accessor 
+            $metaclass->add_around_method_modifier( $attr->name, sub {
+                my $accessor = shift @_;
                 my ($o, $fk) = @_;
                 if (scalar @_ == 2) { # this is a set operation
                     ($fk->isa($ref_to_class))
-                        or croak "Failed ForeignKey reference constraint, expects $ref_to_class";
+                        or croak "Failed ForeignKey constraint, expects $ref_to_class";
                     $o->$ref_from( $fk->$ref_to_attr_name );
+                    return $accessor->(@_);
                 }
+                else {
+                    my $fk_id = $o->$ref_from;
+                    my $v = $attr->get_value($o);
+                    if (defined($fk_id) && not(defined $v)) {
+                        $fk = $o->datastore->find($ref_to_class)->get($fk_id);
+                        $attr->set_value($o, $fk); # cache!
+                        return $fk;
+                    }
+                }
+                return $accessor->(@_);
             });
         }
     }
