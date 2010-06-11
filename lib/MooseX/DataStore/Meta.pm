@@ -14,7 +14,7 @@ sub register_implementation {'MooseX::DataStore::Meta::Attribute::Trait::Persist
 
 package MooseX::DataStore::Meta::Class::Trait::DataStore::Class;
 use Moose::Role;
-use MooseX::DataStore::Class;
+use MooseX::DataStore::Meta::Role;
 
 has 'primary_key' => (
     is              => 'rw',
@@ -44,11 +44,29 @@ has 'column_to_attribute' => (
     default         => sub { {} },
 );
 
-sub configure {
+sub _add_auto_pk {
+    my ($self) = @_;
+    my $auto_pk = $self->add_attribute(
+        id => {
+            traits              => [qw/Persistent/],
+            column              => 'id',
+            isa                 => 'Int',
+            is                  => 'rw',
+        },
+    );
+    $self->primary_key( $auto_pk );
+}
+
+sub datastore_class_setup {
     my ($self, %p) = @_;
     my $metaclass = $self;
     if (exists $p{-table}) { $metaclass->table($p{-table}); }
-    if (exists $p{-primary_key}) { $metaclass->primary_key( $metaclass->get_attribute( $p{-primary_key} ) ) }
+    if (exists $p{-primary_key}) { 
+        $metaclass->primary_key( $metaclass->get_attribute( $p{-primary_key} ) ) 
+    }
+    else {
+        $self->_add_auto_pk;
+    }
     foreach my $attr ($metaclass->get_all_attributes) {
         if ($attr->does('MooseX::DataStore::Meta::Attribute::Trait::Persistent')) {
             push @{$metaclass->persistent_attributes}, $attr;
@@ -56,7 +74,7 @@ sub configure {
             $metaclass->column_to_attribute->{$attr->column} = $attr->name;
         }
     }
-    MooseX::DataStore::Class->meta->apply($metaclass);
+    MooseX::DataStore::Meta::Role->meta->apply($metaclass);
 }
 
 

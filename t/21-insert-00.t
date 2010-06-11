@@ -13,6 +13,9 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
 $dbh->do(<<"EOT");
     CREATE TABLE person (uid INTEGER PRIMARY KEY AUTOINCREMENT, cname VARCHAR(64));
 EOT
+$dbh->do(<<"EOT");
+    CREATE TABLE address (id INTEGER PRIMARY KEY AUTOINCREMENT, city VARCHAR(64), person_id INTEGER REFERENCES person (uid) );
+EOT
 
 my $ds = MooseX::DataStore->connect($dbh);
 
@@ -66,12 +69,14 @@ is $j, $john;
 is $j, $jo;
 
 $people = $ds->query('Person')
-             #->filter('name like ?', 'john%')
-             #->OR
+             ->filter('name like ?', 'john%')
+             ->or
              ->filter({ id => { -in => [ 1, 2 ] } })
-             ->limit(1)
-             ->offset(1)
              ->rows;
+
+is scalar @$people, 2;
+
+ok defined( Address->meta->primary_key );
 
 =cut
 

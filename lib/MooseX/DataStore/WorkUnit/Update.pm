@@ -8,7 +8,7 @@ use Data::Dumper;
 extends 'MooseX::DataStore::WorkUnit';
 
 has 'target' => (
-    does            => 'MooseX::DataStore::Class',
+    does            => 'MooseX::DataStore::Meta::Role',
     is              => 'rw',
 );
 

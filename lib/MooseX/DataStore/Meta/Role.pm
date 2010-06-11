@@ -1,4 +1,4 @@
-package MooseX::DataStore::Class;
+package MooseX::DataStore::Meta::Role;
 use strict;
 use Moose::Role;
 use Carp;
