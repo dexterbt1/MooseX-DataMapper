@@ -59,17 +59,17 @@ $ds->save($bob)->flush;
 $people = $ds->query('Person')->rows;
 is scalar(@$people), 2;
 
-$people = $ds->query('Person')->filter({ name => { -like => "%ohn%" } })->rows;
+$people = $ds->query('Person')->filter('name like ?', '%ohn%')->rows;
 is scalar(@$people), 1;
 is $j->name, 'Johnny';
 is $j, $john;
 is $j, $jo;
 
-#$people = $ds->query('Person')
-#             ->filter({ name => { -like => "%ohn%" } })
+$people = $ds->query('Person')
+             ->filter('person.name like ?', 'john%')
 #             ->OR
 #             ->filter({ id => { -in => [ 1, 2 ] } })
-#             ->rows;
+             ->rows;
 
 =cut
 

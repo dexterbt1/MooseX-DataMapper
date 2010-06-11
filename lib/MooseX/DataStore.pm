@@ -82,11 +82,6 @@ sub flush {
     }
 }
 
-
-sub commit {
-}
-
-
 sub query {
     my ($self, @class_spec) = @_;
     return MooseX::DataStore::QuerySet->new( datastore => $self, class_spec => \@class_spec );

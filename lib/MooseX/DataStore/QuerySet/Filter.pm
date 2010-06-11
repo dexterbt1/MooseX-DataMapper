@@ -9,39 +9,40 @@ has 'queryset' => (
     required        => 1,
 );
 
-has 'spec' => (
-    isa             => 'HashRef',
+has 'clause' => (
+    isa             => 'Str',
     is              => 'rw',
     required        => 1,
 );
 
-has 'compiled_spec' => (
-    isa             => 'HashRef',
+has 'bind_params' => (
+    isa             => 'ArrayRef',
+    is              => 'rw',
+    required        => 1,
+);
+
+has 'sql_stmt' => (
+    isa             => 'Str',
     is              => 'rw',
 );
 
 
 sub BUILD {
     my ($self) = @_;
-    my $spec = $self->spec;
-    my $cspec = { };
     my $class = $self->queryset->class_spec->[0]; # single table for now
-    foreach my $attr_name_spec (keys %$spec) {
-        my $attr_name = $attr_name_spec;
-        my $col = $class->meta->attribute_to_column->{$attr_name};
-        (defined $col)
-            or croak "Unable to resolve column for attribute ($attr_name)";
-        $cspec->{$col} = $spec->{$attr_name};
+    my $stmt = $self->clause;
+    foreach my $attr (@{$class->meta->persistent_attributes}) {
+        my $attr_name = $attr->name;
+        my $col = $attr->column;
+        $stmt =~ s[\b$attr_name\b][$col]g;
     }
-    $self->compiled_spec( $cspec );
+    $self->sql_stmt( $stmt );
 }
 
 
 sub get_sql_stmt_bind {
     my ($self) = @_;
-    my ($stmt, @bind) = $self->queryset->datastore->sqlabs->where( $self->compiled_spec );
-    $stmt =~ s[^\s*WHERE\s*][]i;
-    return ($stmt, @bind);
+    return ($self->sql_stmt, @{$self->bind_params});
 }
 
 

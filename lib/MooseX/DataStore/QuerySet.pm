@@ -55,15 +55,6 @@ sub _get_columns {
     return '*';
 }
 
-sub _get_filters {
-    my ($self) = @_;
-    if (scalar @{$self->filters} > 0) {
-        my $filter = shift @{$self->filters};
-        return $filter->compiled_spec;
-    }
-    return {};
-}
-
 sub _get_resultset {
     my ($self) = @_;
     my $ds = $self->datastore;
@@ -71,8 +62,23 @@ sub _get_resultset {
     my $class = $self->class_spec->[0]; # support single table for now
     my $table = $class->meta->table;
     my $dbixs = $ds->dbixs;
-    my ($stmt, @bind) = $ds->sqlabs->select( $table, $self->_get_columns, $self->_get_filters, undef, $self->sql_limit );
-    my $rs = $dbixs->query($stmt, @bind);
+    my $where_stmt = '';
+    my @where_bind = ();
+    #foreach my $filter (@{$self->filters}) {
+    if (scalar @{$self->filters} > 0) {
+        my $filter = $self->filters->[0];
+        $where_stmt .= join('','(',$filter->sql_stmt,')');
+        push @where_bind, @{$filter->bind_params};
+    }
+    my ($select_stmt) = $ds->sqlabs->select( $table, $self->_get_columns, $where_stmt, undef, $self->sql_limit );
+    my $rs;
+    eval {
+        $rs = $dbixs->query($select_stmt, @where_bind);
+    };
+    if ($@) {
+        croak "Failed SQL statement:\n\t$select_stmt";
+    }
+    #print STDERR $select_stmt,"\n";
     return $rs;
 }
 
@@ -113,10 +119,11 @@ sub _new_object {
 
 
 sub filter {
-    my ($self, $filter_spec) = @_;
+    my ($self, $where_clause, @bind) = @_;
     push @{$self->filters}, MooseX::DataStore::QuerySet::Filter->new( 
         queryset    => $self,
-        spec        => $filter_spec 
+        clause      => $where_clause,
+        bind_params => \@bind,
     );
     return $self;
 }
@@ -135,7 +142,7 @@ sub get {
     my ($self, $pk) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     my $pk_field = $class->meta->primary_key->name;
-    $self->filter({ $pk_field => $pk })->limit(1);
+    $self->filter("$pk_field = ?", $pk)->limit(1);
     my $rs = $self->_get_resultset;
     my $row = $rs->hash;
     return $self->_new_object( $class, $row );
