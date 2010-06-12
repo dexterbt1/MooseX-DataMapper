@@ -88,7 +88,7 @@ sub _get_resultset {
     if ($@) {
         croak "Failed SQL statement:\n\t$select_stmt".join("\n\t",@where_bind);
     }
-    #print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
+    print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
     return $rs;
 }
 
@@ -98,7 +98,7 @@ sub _new_object {
     if (scalar @_ == 3) { $cached=1; }
     my $pk_rowfield = $class->meta->primary_key->column;
     my $pk = $row->{$pk_rowfield};
-    my $o = ($cached) ? $self->datastore->get_idmap_cached( $class, $pk ) : undef;
+    my $o;
     {
         my $args = {};
         foreach my $col (keys %$row) {
@@ -106,22 +106,10 @@ sub _new_object {
             next if (not defined $attr_name); # ignore non-member columns
             my $row_val = $row->{$col};
             next if (not defined $row_val);
-            if (not $o) {
-                $args->{$attr_name} = $row->{$col};
-            }
-            else {
-                $o->$attr_name($row_val); # coerce?
-            }
+            $args->{$attr_name} = $row->{$col};
         }
-        if (not $o) {
-            $o = $class->new(%$args);
-            $self->datastore->set_idmap_cached( $class, $pk, $o );
-            $o->datastore( $self->datastore );
-        }
-        # force clear cached foreign key values
-        foreach my $fk_attr (@{$class->meta->foreignkey_attributes}) {
-            $fk_attr->clear_value($o);
-        }
+        $o = $class->new(%$args);
+        $o->datastore( $self->datastore );
     }
     return $o;
 }
@@ -221,7 +209,7 @@ sub get_nocache {
 }
 
 
-sub rows {
+sub as_objects {
     my ($self) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     my $rs = $self->_get_resultset;

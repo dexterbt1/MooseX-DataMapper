@@ -5,7 +5,6 @@ use Carp;
 
 # inside-out 
 my $datastore_of = { };
-
 sub datastore {
     my $self = shift @_;
     if (@_) {

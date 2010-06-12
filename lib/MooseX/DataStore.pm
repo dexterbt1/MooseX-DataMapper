@@ -36,12 +36,6 @@ has 'dbixs' => (
     is              => 'rw',
 );
 
-has 'identity_map' => (
-    isa             => 'HashRef[MooseX::DataStore::Meta::Class::Trait::DataObject]',
-    is              => 'rw',
-    default         => sub { {} },
-);
-
 has 'work_unflushed' => (
     isa             => 'ArrayRef[MooseX::DataStore::WorkUnit]',
     is              => 'rw',
@@ -76,12 +70,8 @@ sub _save_deep {
         my $i_fk = $i->$i_fk_attr_name;
         if (defined($i_fk)) {
             $self->_save_deep($i_fk);
-            $self->enqueue_work(
-                # this will set the proper foreign key ids on the referred objects
-                MooseX::DataStore::WorkUnit::CodeHook->new( datastore => $self, hook => sub {
-                    $i->$i_fk_ref_from( $i_fk->$i_fk_ref_to_attr_name );
-                })
-            );
+            # this will set the proper foreign key ids on the referred objects
+            $i->$i_fk_ref_from( $i_fk->$i_fk_ref_to_attr_name );
         }
     }
     $self->_save_one($i);
@@ -94,16 +84,12 @@ sub _save_one {
     eval {
         if (defined $i->pk) {
             # update
-            $self->enqueue_work(
-                MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i )
-            );
+            MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i )->execute;
         }
         else {
             # not pk yet, insert
             $i->datastore( $self );
-            $self->enqueue_work(
-                MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i )
-            );
+            MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i )->execute;
         }
     };
     if ($@) { croak $@; }
@@ -137,23 +123,6 @@ sub get_idmap_id {
     my ($self, $class, $pk) = @_;
     return if (not defined $pk);
     return sprintf("%s{%d}", $class, $pk);
-}
-
-sub get_idmap_cached {
-    my ($self, $class, $pk) = @_;
-    my $idmap_id = $self->get_idmap_id( $class, $pk );
-    return if (not defined $idmap_id);
-    my $o = exists($self->identity_map->{$idmap_id}) ? $self->identity_map->{$idmap_id} : undef;
-    return $o;
-}
-
-sub set_idmap_cached {
-    my ($self, $class, $pk, $o) = @_;
-    my $idmap_id = $self->get_idmap_id( $class, $pk );
-    return if (not defined $idmap_id);
-    $self->identity_map->{$idmap_id} = $o;
-    weaken $self->identity_map->{$idmap_id};
-    return $o;
 }
 
 sub DEMOLISH {

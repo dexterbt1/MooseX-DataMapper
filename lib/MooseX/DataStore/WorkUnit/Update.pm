@@ -25,7 +25,6 @@ sub execute {
     my ($stmt, @bind) = $self->datastore->sqlabs->update( $table, $data, $where );
     my $dbixs = $self->datastore->dbixs;
     $dbixs->query( $stmt, @bind );
-    $self->datastore->set_idmap_cached( $t->meta->name, $t->pk, $t );
 }
 
 1;

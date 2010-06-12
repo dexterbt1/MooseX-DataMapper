@@ -32,14 +32,14 @@ ok $john->id > 0;
 
 my $people;
 
-$people = $ds->find('Person')->rows;
+$people = $ds->find('Person')->as_objects;
 is ref($people), 'ARRAY';
 is scalar(@$people), 1;
 my $jo = $people->[0];
 
 is $jo->name, 'John';
 
-is $jo, $john; # same reference
+isnt $jo, $john; # not the same reference, no identity_map support
 
 # update
 
@@ -49,26 +49,22 @@ $ds->save($jo);
 my $j = $ds->find('Person')->get($jo->pk);
 is $j->name, 'Johnny';
 
-is $j, $jo;
-is $j, $john;
-
 my $bob = Person->new( name => 'Bob' );
 $ds->save($bob);
 
-$people = $ds->find('Person')->rows;
+$people = $ds->find('Person')->as_objects;
 is scalar(@$people), 2;
 
-$people = $ds->find('Person')->filter('name like ?', '%ohn%')->rows;
+$people = $ds->find('Person')->filter('name like ?', '%ohn%')->as_objects;
 is scalar(@$people), 1;
-is $j->name, 'Johnny';
-is $j, $john;
-is $j, $jo;
+$jo = $people->[0];
+is $jo->name, 'Johnny';
 
 $people = $ds->find('Person')
              ->filter('name like ?', 'john%')
              ->or
              ->filter({ id => { -in => [ 1, 2 ] } })
-             ->rows;
+             ->as_objects;
 
 is scalar @$people, 2;
 
@@ -83,11 +79,11 @@ $johns_addr->person( $john );
 $ds->save($johns_addr);
 
 my $johns_addr_copy = $ds->find('Address')->get(1);
-is $johns_addr_copy, $johns_addr;
+isnt $johns_addr_copy, $johns_addr; # not the same objects, assert no identity_map
 
-is $johns_addr->person_id, $john->pk;
-isnt $johns_addr->person, $john;
-isnt $johns_addr->person, $jo;
+is $johns_addr_copy->person_id, $john->pk;
+isnt $johns_addr_copy->person, $john; # again, asssert no identity map
+isnt $johns_addr_copy->person, $jo;
 
 my $matts_addr = Address->new(
     city    => "London",
@@ -97,19 +93,20 @@ $ds->save($matts_addr);
 
 isnt $matts_addr->pk, undef;
 isnt $matts_addr->person_id, undef;
-$people = $ds->find('Person')->filter("name = ?", "Matt")->rows;
+isnt $matts_addr->person, undef;
+$people = $ds->find('Person')->filter("name = ?", "Matt")->as_objects;
 my $matt = shift @$people;
 ok defined($matt);
 
-is $matt, $matts_addr->person;
+isnt $matt, $matts_addr->person;
 
 # =================================
-# start a new session, this means the identity map is cleared
+# start a new session
 
 $ds = MooseX::DataStore->connect($dbh);
 
 my $places;
-$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->rows;
+$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->as_objects;
 is scalar @$places, 1;
 
 my $addr = $places->[0];
@@ -118,7 +115,7 @@ isa_ok $addr->person, 'Person';
 isnt $addr->person, $matt;
 
 $matt = $addr->person;
-$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->rows;
+$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->as_objects;
 
 $addr = $places->[0];
 isnt $addr->person, $matt;
@@ -138,16 +135,16 @@ $ds->select('Address|a', 'Person|p')
    ->AND
    ->where({ 'p.name' => { -like => "Bo%" } })
    ->limit(1)
-   ->rows;
+   ->as_objects;
 
 $ds->query('Address')
    ->count('id')
-   ->row;
+   ->as_objects;
 
 $ds->query('Address')
    ->count('id')
    ->group_by('person_id')
-   ->rows;
+   ->as_objects;
 
 =cut
 
