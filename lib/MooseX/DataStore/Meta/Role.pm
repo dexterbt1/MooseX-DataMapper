@@ -27,7 +27,7 @@ sub get_data_hash {
     foreach my $attr (@{$metaclass->persistent_attributes}) {
         my $attr_name = $attr->name;
         my $column = $attr->column;
-        my $value = $self->$attr_name;
+        my $value = $attr->get_value($self);
         if ( ($metaclass->primary_key->name eq $attr_name) and (not defined $value) ) {
             next; # skip undefined primary keys
         }

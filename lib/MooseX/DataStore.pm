@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Moose;
 use DBIx::Simple;
+use Data::Dumper;
 use SQL::Abstract::Limit;
 use Scalar::Util qw/weaken/;
 use Carp;
@@ -21,6 +22,8 @@ has 'dbh' => (
         my ($self, $v) = @_;
         $v->ping
             or die "Unable to ping database handle: $DBI::errstr";
+        $v->{RaiseError}
+            or die "RaiseError is not set";
         $self->sqlabs( SQL::Abstract::Limit->new( limit_dialect => $v ) );
         $self->dbixs( DBIx::Simple->connect( $v ) );
     },
@@ -56,7 +59,10 @@ sub connect {
 sub save {
     my ($self, $i, $depth) = @_;
     if (scalar @_ == 2) { $depth=0; }
-    $self->save_deep($i, $depth);
+    eval {
+        $self->save_deep($i, $depth);
+    };
+    if ($@) { croak $@; }
     $self->flush;
     return $i;
 }
@@ -66,16 +72,15 @@ sub save_deep {
     # traverse object tree, saves the object graph, based on depth
     my $next_depth = (defined $depth) ? $depth-1 : undef;
     foreach my $i_fk_attr (@{$i->meta->foreignkey_attributes}) {
-        my $i_fk_ref_to_attr_name = $i_fk_attr->ref_to_attr->name;
-        my $i_fk_ref_from = $i_fk_attr->ref_from;
-        my $i_fk_attr_name = $i_fk_attr->name;
-        my $i_fk = $i->$i_fk_attr_name;
+        my $i_fk_ref_to_attr = $i_fk_attr->ref_to_attr;
+        my $i_fk_ref_from_attr = $i->meta->get_attribute($i_fk_attr->ref_from);
+        my $i_fk = $i_fk_attr->get_value($i);
         if (defined($i_fk)) {
-            if ( not(defined $next_depth) or ($next_depth > 0) ) {
+            if ( not(defined $next_depth) or ($next_depth >= 0) ) {
                 $self->save_deep($i_fk, $next_depth);
             }
             # this will set the proper foreign key ids on the referred objects
-            $i->$i_fk_ref_from( $i_fk->$i_fk_ref_to_attr_name );
+            $i_fk_ref_from_attr->set_value($i, $i_fk_ref_to_attr->get_value($i_fk) );
         }
     }
     $self->save_one($i);
@@ -108,7 +113,7 @@ sub flush {
     }
 }
 
-sub find {
+sub objects {
     my ($self, @class_spec) = @_;
     return MooseX::DataStore::QuerySet->new( datastore => $self, class_spec => \@class_spec );
 }

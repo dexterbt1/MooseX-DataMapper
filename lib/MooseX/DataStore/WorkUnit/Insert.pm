@@ -30,7 +30,7 @@ sub execute {
     # automatically assign the primary key field with the last insert id
     my $pk_field = $t->meta->primary_key->name;
     $t->$pk_field( $dbixs->last_insert_id(undef, undef, $table, undef) );
-    print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
+    ##print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
 }
 
 1;

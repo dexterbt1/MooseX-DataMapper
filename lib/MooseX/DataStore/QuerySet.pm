@@ -5,6 +5,7 @@ use MooseX::DataStore;
 use MooseX::DataStore::QuerySet::Filter;
 use MooseX::DataStore::QuerySet::Conjunction;
 use Carp;
+use Scalar::Util qw/blessed/;
 
 has 'datastore' => (
     isa             => 'MooseX::DataStore',
@@ -102,9 +103,9 @@ sub _get_resultset {
         $rs = $dbixs->query($select_stmt, @where_bind);
     };
     if ($@) {
-        croak "Failed SQL statement:\n\t$select_stmt".join("\n\t",@where_bind);
+        croak "Failed SQL statement:\n\t$select_stmt\n\t".join("\n\t",@where_bind)."\n";
     }
-    print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
+    ##print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
     return $rs;
 }
 
@@ -145,6 +146,9 @@ sub _apply_conjunction {
 # ===============
 # public api
 # ===============
+
+
+# mutator methods
 
 
 # queryset methods that can be chained
@@ -214,7 +218,7 @@ sub offset {
 # queryset methods that return row(s)
 
 
-sub first_object {
+sub get_first {
     my ($self) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     if (not defined $self->sql_offset) {
@@ -228,17 +232,22 @@ sub first_object {
 
 
 sub get {
-    my ($self, $pk) = @_;
+    my ($self, $o) = @_;
+    # accept either an object or a primary_key value
+    my $pk = $o;
+    if (blessed($o)) {
+        $pk = $o->pk;
+    }
     my $class = $self->class_spec->[0]; # support single table for now
     my $pk_field = $class->meta->primary_key->name;
-    $self->filter({$pk_field => $pk})->limit(1);
+    $self->static_filter({$pk_field => $pk})->limit(1);
     my $rs = $self->_get_resultset;
     my $row = $rs->hash;
     return $self->_new_object( $class, $row );
 }
 
 
-sub as_objects {
+sub get_objects {
     my ($self) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     my $rs = $self->_get_resultset;

@@ -45,12 +45,11 @@ sub BUILD {
         my $from_col = $from_attr->column;
         my $to_attr = $attr->ref_to_attr;
         my $to_col = $to_attr->column;
-        my ($to_class, $to_attr_name) = ($to_attr->associated_class->name, $to_attr->name);
         $stmt =~ s[\b$attr_name\b][$from_col]g;
         for (my $bp_i=0; $bp_i < scalar(@{$self->bind_params}); $bp_i++) {
             my $bindp = $self->bind_params->[$bp_i];
-            if (blessed($bindp) and $bindp->can($to_attr_name)) {
-                $self->bind_params->[$bp_i] = $bindp->$to_attr_name;
+            if (blessed($bindp)) {
+                $self->bind_params->[$bp_i] = $to_attr->get_value($bindp);
             }
         }
     }

@@ -32,7 +32,7 @@ ok $john->id > 0;
 
 my $people;
 
-$people = $ds->find('Person')->as_objects;
+$people = $ds->objects('Person')->get_objects;
 is ref($people), 'ARRAY';
 is scalar(@$people), 1;
 my $jo = $people->[0];
@@ -46,25 +46,25 @@ isnt $jo, $john; # not the same reference, no identity_map support
 $jo->name('Johnny');
 $ds->save($jo);
 
-my $j = $ds->find('Person')->get($jo->pk);
+my $j = $ds->objects('Person')->get($jo->pk);
 is $j->name, 'Johnny';
 
 my $bob = Person->new( name => 'Bob' );
 $ds->save($bob);
 
-$people = $ds->find('Person')->as_objects;
+$people = $ds->objects('Person')->get_objects;
 is scalar(@$people), 2;
 
-$people = $ds->find('Person')->filter('name like ?', '%ohn%')->as_objects;
+$people = $ds->objects('Person')->filter('name like ?', '%ohn%')->get_objects;
 is scalar(@$people), 1;
 $jo = $people->[0];
 is $jo->name, 'Johnny';
 
-$people = $ds->find('Person')
+$people = $ds->objects('Person')
              ->filter('name like ?', 'john%')
              ->or
              ->filter({ id => { -in => [ 1, 2 ] } })
-             ->as_objects;
+             ->get_objects;
 
 is scalar @$people, 2;
 
@@ -78,7 +78,7 @@ isa_ok $johns_addr, 'Address';
 $johns_addr->person( $john );
 $ds->save($johns_addr);
 
-my $johns_addr_copy = $ds->find('Address')->get(1);
+my $johns_addr_copy = $ds->objects('Address')->get(1);
 isnt $johns_addr_copy, $johns_addr; # not the same objects, assert no identity_map
 
 is $johns_addr_copy->person_id, $john->pk;
@@ -94,7 +94,7 @@ $ds->save_deep($matts_addr);
 isnt $matts_addr->pk, undef;
 isnt $matts_addr->person_id, undef;
 isnt $matts_addr->person, undef;
-$people = $ds->find('Person')->filter("name = ?", "Matt")->as_objects;
+$people = $ds->objects('Person')->filter("name = ?", "Matt")->get_objects;
 my $matt = shift @$people;
 ok defined($matt);
 
@@ -106,7 +106,7 @@ isnt $matt, $matts_addr->person;
 $ds = MooseX::DataStore->connect($dbh);
 
 my $places;
-$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->as_objects;
+$places = $ds->objects('Address')->filter('city = ?', 'London')->limit(1)->get_objects;
 is scalar @$places, 1;
 
 my $addr = $places->[0];
@@ -115,7 +115,7 @@ isa_ok $addr->person, 'Person';
 isnt $addr->person, $matt;
 
 $matt = $addr->person;
-$places = $ds->find('Address')->filter('city = ?', 'London')->limit(1)->as_objects;
+$places = $ds->objects('Address')->filter('city = ?', 'London')->limit(1)->get_objects;
 
 $addr = $places->[0];
 isnt $addr->person, $matt;
@@ -140,43 +140,46 @@ isnt $addr->person_id, undef; # we've saved already, this should have an id alre
 my $paris = Address->new( city => 'Paris', person => $james );
 $ds->save_deep($paris, 1);
 
-$places = $ds->find('Address')->filter({ city => 'Paris', person_id => $james->pk })->as_objects;
+$places = $ds->objects('Address')->filter({ city => 'Paris', person_id => $james->pk })->get_objects;
 $addr = $places->[0];
 is $addr->city, 'Paris';
 is $addr->person->id, $james->id;
 
 # try querying by person object, not the id
-$addr = $ds->find('Address')->filter({ city => 'Paris', person => $james })->first_object;
+$addr = $ds->objects('Address')->filter({ city => 'Paris', person => $james })->get_first;
 is $addr->city, 'Paris';
 is $addr->person->id, $james->id;
 
 
 # reverse foreignkey relationships
 
-$places = $james->addresses->as_objects;
+$places = $james->addresses->get_objects;
 is scalar(@$places), 1;
 
-#$places = $james->addresses->filter("city = ?", "Paris")->as_objects;
+$addr = $james->addresses->get($paris);
+is $addr->pk, $paris->pk;
+
+#$places = $james->addresses->filter("city = ?", "Paris")->get_objects;
 
 ok 1;
 
 =cut
 
-$ds->select('Address|a', 'Person|p')
+$ds->objects('Address|a', 'Person|p')
    ->where({ 'a.person_id' => 'p.id' })
    ->AND
    ->where({ 'p.name' => { -like => "Bo%" } })
    ->limit(1)
-   ->as_objects;
+   ->get_objects;
 
-$ds->query('Address')
+$ds->objects('Address')
    ->count('id')
-   ->as_objects;
+   ->get_objects;
 
-$ds->query('Address')
+$ds->objects('Address')
    ->count('id')
    ->group_by('person_id')
-   ->as_objects;
+   ->get_objects;
 
 =cut
 

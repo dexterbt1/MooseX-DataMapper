@@ -5,7 +5,6 @@ use Moose::Role;
 has 'column' => (
     isa             => 'Str',
     is              => 'rw',
-    required        => 1,
 );
 
 package Moose::Meta::Attribute::Custom::Trait::Persistent;
@@ -24,7 +23,6 @@ use Data::Dumper;
 has 'ref_from' => (
     isa             => 'Str',
     is              => 'rw',
-    required        => 1,
     trigger         => sub {
         my ($self, $v) = @_;
         # TODO: this is a hack, while I don't know the proper solution for this: 
@@ -135,8 +133,8 @@ sub _get_reverse_fk_method {
     my $ref_from_class      = $ref_from_attr->associated_class->name;
     return sub {
         my ($self) = @_;
-        return $self->datastore->find($ref_from_class)
-                               ->static_filter({ $ref_from => $self->$ref_to_attr_name() });
+        return $self->datastore->objects($ref_from_class)
+                               ->static_filter({ $ref_from => $ref_to_attr->get_value($self) });
     };
 }
 
@@ -155,9 +153,9 @@ sub _get_forward_fk_method_modifier {
         if (scalar @_ == 2) { # this is a set operation
             ($fk->isa($ref_to_class))
                 or croak "Failed ForeignKey constraint, expects $ref_to_class";
-            my $fk_id = $fk->$ref_to_attr_name;
+            my $fk_id = $ref_to_attr->get_value($fk);
             if (defined $fk_id) {
-                $o->$ref_from( $fk_id );
+                $ref_from_attr->set_value( $o, $fk_id );
             }
             else {
                 # undef ids of foreign key assignments should clear the ref_from attribute
@@ -167,10 +165,10 @@ sub _get_forward_fk_method_modifier {
         }
         else {
             # this is a read operation
-            my $fk_id = $o->$ref_from;
+            my $fk_id = $ref_from_attr->get_value($o);
             my $v = $attr->get_value($o);
             if (defined($fk_id) && not(defined $v)) {
-                $fk = $o->datastore->find($ref_to_class)->get($fk_id);
+                $fk = $o->datastore->objects($ref_to_class)->get($fk_id);
                 $attr->set_value($o, $fk); # cache!
                 return $fk;
             }
@@ -180,6 +178,19 @@ sub _get_forward_fk_method_modifier {
         return $accessor->(@_);
     };
 }
+
+
+sub _add_persistent_attribute {
+    my ($self, $attr) = @_;
+    my $metaclass = $self;
+    push @{$metaclass->persistent_attributes}, $attr;
+    if (not defined $attr->column) {
+        $attr->column( $attr->name ); # use the attribute name as the default column name
+    }
+    $metaclass->attribute_to_column->{$attr->name} = $attr->column;
+    $metaclass->column_to_attribute->{$attr->column} = $attr->name;
+}
+
 
 sub datastore_class_setup {
     my ($self, %p) = @_;
@@ -193,17 +204,30 @@ sub datastore_class_setup {
     }
     foreach my $attr ($metaclass->get_all_attributes) {
         if ($attr->does('MooseX::DataStore::Meta::Attribute::Trait::Persistent')) {
-            push @{$metaclass->persistent_attributes}, $attr;
-            $metaclass->attribute_to_column->{$attr->name} = $attr->column;
-            $metaclass->column_to_attribute->{$attr->column} = $attr->name;
+            $self->_add_persistent_attribute($attr);
         }
         elsif ($attr->does('MooseX::DataStore::Meta::Attribute::Trait::ForeignKey')) {
             push @{$metaclass->foreignkey_attributes}, $attr;
-            my $ref_from = $attr->ref_from;
-            my $ref_from_attr = $metaclass->get_attribute($ref_from);
+
             my $ref_to_attr = $attr->ref_to_attr;
             my $ref_to_attr_name = $ref_to_attr->name;
             my $ref_to_class = $ref_to_attr->associated_class->name;
+
+            if (not defined $attr->ref_from) {
+                my $name = lc($ref_to_class).'_'.lc($ref_to_attr_name);
+                my $x = $metaclass->add_attribute(
+                    $name => {
+                        traits              => [qw/Persistent/],
+                        column              => $name,
+                        isa                 => 'Int',
+                        is                  => 'rw',
+                    },
+                );
+                $self->_add_persistent_attribute($x);
+                $attr->ref_from($name);
+            }
+            my $ref_from = $attr->ref_from;
+            my $ref_from_attr = $metaclass->get_attribute($ref_from);
             my $args = {
                 attr                => $attr,
                 ref_from            => $ref_from,
@@ -212,7 +236,7 @@ sub datastore_class_setup {
                 ref_to_attr_name    => $ref_to_attr_name,
                 ref_to_class        => $ref_to_class,
             };
-            # wrappers
+            # wrappers to simple fk relationship
             $metaclass->add_around_method_modifier( $attr->name, $self->_get_forward_fk_method_modifier( $args ) );
             $ref_to_class->meta->add_method( $attr->reverse_link, $self->_get_reverse_fk_method( $args ) );
         }
