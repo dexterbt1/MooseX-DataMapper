@@ -25,6 +25,7 @@ sub execute {
     my ($stmt, @bind) = $self->datastore->sqlabs->update( $table, $data, $where );
     my $dbixs = $self->datastore->dbixs;
     $dbixs->query( $stmt, @bind );
+    print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
 }
 
 1;

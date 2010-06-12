@@ -54,32 +54,36 @@ sub connect {
 
 
 sub save {
-    my ($self, $i) = @_;
-    $self->_save_deep($i);
+    my ($self, $i, $depth) = @_;
+    if (scalar @_ == 2) { $depth=0; }
+    $self->save_deep($i, $depth);
     $self->flush;
     return $i;
 }
 
-sub _save_deep {
-    my ($self, $i) = @_;
-    # traverse object tree, saves the object graph
+sub save_deep {
+    my ($self, $i, $depth) = @_;
+    # traverse object tree, saves the object graph, based on depth
+    my $next_depth = (defined $depth) ? $depth-1 : undef;
     foreach my $i_fk_attr (@{$i->meta->foreignkey_attributes}) {
         my $i_fk_ref_to_attr_name = $i_fk_attr->ref_to_attr->name;
         my $i_fk_ref_from = $i_fk_attr->ref_from;
         my $i_fk_attr_name = $i_fk_attr->name;
         my $i_fk = $i->$i_fk_attr_name;
         if (defined($i_fk)) {
-            $self->_save_deep($i_fk);
+            if (not(defined $next_depth) or ($next_depth > 0)) {
+                $self->save_deep($i_fk, $next_depth);
+            }
             # this will set the proper foreign key ids on the referred objects
             $i->$i_fk_ref_from( $i_fk->$i_fk_ref_to_attr_name );
         }
     }
-    $self->_save_one($i);
+    $self->save_one($i);
     return $i;
 }
 
 
-sub _save_one {
+sub save_one {
     my ($self, $i) = @_;
     eval {
         if (defined $i->pk) {
@@ -118,12 +122,6 @@ sub enqueue_work {
     push @{$self->work_unflushed}, $work;
 }
 
-
-sub get_idmap_id {
-    my ($self, $class, $pk) = @_;
-    return if (not defined $pk);
-    return sprintf("%s{%d}", $class, $pk);
-}
 
 sub DEMOLISH {
     my ($self) = @_;

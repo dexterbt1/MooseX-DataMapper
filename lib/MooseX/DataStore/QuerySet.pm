@@ -88,7 +88,7 @@ sub _get_resultset {
     if ($@) {
         croak "Failed SQL statement:\n\t$select_stmt".join("\n\t",@where_bind);
     }
-    #print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
+    print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
     return $rs;
 }
 

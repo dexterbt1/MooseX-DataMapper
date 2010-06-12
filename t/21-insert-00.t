@@ -89,7 +89,7 @@ my $matts_addr = Address->new(
     city    => "London",
     person  => Person->new( name => "Matt" ),
 );
-$ds->save($matts_addr);
+$ds->save_deep($matts_addr);
 
 isnt $matts_addr->pk, undef;
 isnt $matts_addr->person_id, undef;
@@ -121,7 +121,7 @@ $addr = $places->[0];
 isnt $addr->person, $matt;
 
 $addr->person( Person->new( name => "James" ) );
-$ds->save($addr);
+$ds->save_deep($addr);
 
 is $addr->person->name, 'James';
 isnt $addr->person->id, undef;
@@ -129,9 +129,28 @@ isnt $addr->person_id, undef;
 my $james = $addr->person;
 
 $addr->person( Person->new( name => 'Paul' ) );
-$ds->save($addr);
+$ds->save($addr->person);
 is $addr->person->name, 'Paul';
+isnt $addr->person->id, undef;
 isnt $addr->person->id, $james->pk;
+is $addr->person_id, undef; # since we've not saved this obj
+$ds->save($addr);
+isnt $addr->person_id, undef; # we've saved already, this should have an id already 
+
+my $paris = Address->new( city => 'Paris', person => $james );
+$ds->save_deep($paris, 1);
+
+$places = $ds->find('Address')->filter({ city => 'Paris', person_id => $james->pk })->as_objects;
+$addr = $places->[0];
+is $addr->city, 'Paris';
+is $addr->person->id, $james->id;
+
+# try querying by person object, not the id
+$places = $ds->find('Address')->filter({ city => 'Paris', person => $james })->as_objects;
+$addr = $places->[0];
+is $addr->city, 'Paris';
+is $addr->person->id, $james->id;
+
 
 # reverse foreignkey relationships
 
