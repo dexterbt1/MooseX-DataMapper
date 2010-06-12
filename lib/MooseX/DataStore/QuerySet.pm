@@ -88,14 +88,13 @@ sub _get_resultset {
     if ($@) {
         croak "Failed SQL statement:\n\t$select_stmt".join("\n\t",@where_bind);
     }
-    print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
+    #print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
     return $rs;
 }
 
 
 sub _new_object {
-    my ($self, $class, $row, $cached) = @_;
-    if (scalar @_ == 3) { $cached=1; }
+    my ($self, $class, $row) = @_;
     my $pk_rowfield = $class->meta->primary_key->column;
     my $pk = $row->{$pk_rowfield};
     my $o;
@@ -188,24 +187,14 @@ sub offset {
 # queryset methods that return row(s)
 
 
-sub _get_row {
-    my ($self, $cached, $pk) = @_;
+sub get {
+    my ($self, $pk) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     my $pk_field = $class->meta->primary_key->name;
     $self->filter({$pk_field => $pk})->limit(1);
     my $rs = $self->_get_resultset;
     my $row = $rs->hash;
-    return $self->_new_object( $class, $row, $cached );
-}
-
-sub get {
-    my ($self, $pk) = @_;
-    return $self->_get_row(1, $pk);
-}
-
-sub get_nocache {
-    my ($self, $pk) = @_;
-    return $self->_get_row(0, $pk);
+    return $self->_new_object( $class, $row );
 }
 
 

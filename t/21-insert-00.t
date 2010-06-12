@@ -124,7 +124,16 @@ $addr->person( Person->new( name => "James" ) );
 $ds->save($addr);
 
 is $addr->person->name, 'James';
+isnt $addr->person->id, undef;
 isnt $addr->person_id, undef;
+my $james = $addr->person;
+
+$addr->person( Person->new( name => 'Paul' ) );
+$ds->save($addr);
+is $addr->person->name, 'Paul';
+isnt $addr->person->id, $james->pk;
+
+# reverse foreignkey relationships
 
 ok 1;
 
