@@ -146,8 +146,7 @@ is $addr->city, 'Paris';
 is $addr->person->id, $james->id;
 
 # try querying by person object, not the id
-$places = $ds->find('Address')->filter({ city => 'Paris', person => $james })->as_objects;
-$addr = $places->[0];
+$addr = $ds->find('Address')->filter({ city => 'Paris', person => $james })->first_object;
 is $addr->city, 'Paris';
 is $addr->person->id, $james->id;
 

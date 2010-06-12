@@ -187,6 +187,19 @@ sub offset {
 # queryset methods that return row(s)
 
 
+sub first_object {
+    my ($self) = @_;
+    my $class = $self->class_spec->[0]; # support single table for now
+    if (not defined $self->sql_offset) {
+        # optimize a bit
+        $self->limit(1);
+    }
+    my $rs = $self->_get_resultset;
+    my $row = $rs->hash;
+    return $self->_new_object( $class, $row );
+}
+
+
 sub get {
     my ($self, $pk) = @_;
     my $class = $self->class_spec->[0]; # support single table for now

@@ -71,7 +71,7 @@ sub save_deep {
         my $i_fk_attr_name = $i_fk_attr->name;
         my $i_fk = $i->$i_fk_attr_name;
         if (defined($i_fk)) {
-            if (not(defined $next_depth) or ($next_depth > 0)) {
+            if ( not(defined $next_depth) or ($next_depth > 0) ) {
                 $self->save_deep($i_fk, $next_depth);
             }
             # this will set the proper foreign key ids on the referred objects
