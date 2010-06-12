@@ -44,6 +44,13 @@ has 'sql_offset' => (
     is              => 'rw',
 );
 
+has 'static_filters' => (
+    isa             => 'ArrayRef[MooseX::DataStore::QuerySet::Filter]',
+    is              => 'rw',
+    lazy            => 1,
+    default         => sub { [] },
+);
+
 has 'filters' => (
     isa             => 'ArrayRef[MooseX::DataStore::QuerySet::Filter|MooseX::DataStore::QuerySet::Conjunction]',
     is              => 'rw',
@@ -70,7 +77,16 @@ sub _get_resultset {
     my $dbixs = $ds->dbixs;
     my $where_stmt = '';
     my @where_bind = ();
-    #foreach my $filter (@{$self->filters}) {
+    {
+        my $count = 0;
+        foreach my $filter (@{$self->static_filters}) {
+            if ($count>0) { $where_stmt .= ' AND '; } # all static filters are joined by AND
+            $where_stmt .= $filter->sql_stmt;
+            push @where_bind, @{$filter->bind_params};
+            $count++;
+        }
+    }
+    
     foreach my $item (@{$self->filters}) {
         if ($item->isa('MooseX::DataStore::QuerySet::Conjunction')) {
             $where_stmt .= ' '.$item->term.' ';
@@ -134,8 +150,8 @@ sub _apply_conjunction {
 # queryset methods that can be chained
 
 
-sub filter {
-    my ($self, $where_clause, @bind) = @_;
+sub _add_filter {
+    my ($self, $collection, $where_clause, @bind) = @_;
     my $clause;
     my $bind_params = \@bind;
     if (ref($where_clause) eq 'HASH') {
@@ -146,12 +162,23 @@ sub filter {
     else {
         $clause = '('.$where_clause.')';
     }
-    push @{$self->filters}, MooseX::DataStore::QuerySet::Filter->new( 
+    push @{$self->$collection}, MooseX::DataStore::QuerySet::Filter->new( 
         queryset    => $self,
         clause      => $clause,
         bind_params => $bind_params,
     );
     return $self;
+}
+
+
+sub static_filter {
+    my $self = shift @_;
+    return $self->_add_filter( 'static_filters', @_ );
+}
+
+sub filter {
+    my $self = shift @_;
+    return $self->_add_filter( 'filters', @_ );
 }
 
 

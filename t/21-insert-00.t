@@ -153,6 +153,11 @@ is $addr->person->id, $james->id;
 
 # reverse foreignkey relationships
 
+$places = $james->addresses->as_objects;
+is scalar(@$places), 1;
+
+#$places = $james->addresses->filter("city = ?", "Paris")->as_objects;
+
 ok 1;
 
 =cut

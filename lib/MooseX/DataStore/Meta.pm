@@ -57,6 +57,12 @@ has 'ref_to' => (
     },
 );
 
+has 'reverse_link' => (
+    isa             => 'Str',
+    is              => 'rw',
+    required        => 1,
+);
+
 
 
 package Moose::Meta::Attribute::Custom::Trait::ForeignKey;
@@ -117,6 +123,64 @@ sub _add_auto_pk {
     $self->primary_key( $auto_pk );
 }
 
+
+sub _get_reverse_fk_method {
+    my ($self, $args) = @_;
+    my $attr                = $args->{attr};
+    my $ref_from            = $args->{ref_from};
+    my $ref_from_attr       = $args->{ref_from_attr};
+    my $ref_to_attr         = $args->{ref_to_attr};
+    my $ref_to_attr_name    = $args->{ref_to_attr_name};
+    my $ref_to_class        = $args->{ref_to_class};
+    my $ref_from_class      = $ref_from_attr->associated_class->name;
+    return sub {
+        my ($self) = @_;
+        return $self->datastore->find($ref_from_class)
+                               ->static_filter({ $ref_from => $self->$ref_to_attr_name() });
+    };
+}
+
+
+sub _get_forward_fk_method_modifier {
+    my ($self, $args) = @_;
+    my $attr                = $args->{attr};
+    my $ref_from            = $args->{ref_from};
+    my $ref_from_attr       = $args->{ref_from_attr};
+    my $ref_to_attr         = $args->{ref_to_attr};
+    my $ref_to_attr_name    = $args->{ref_to_attr_name};
+    my $ref_to_class        = $args->{ref_to_class};
+    return sub {
+        my $accessor = shift @_;
+        my ($o, $fk) = @_;
+        if (scalar @_ == 2) { # this is a set operation
+            ($fk->isa($ref_to_class))
+                or croak "Failed ForeignKey constraint, expects $ref_to_class";
+            my $fk_id = $fk->$ref_to_attr_name;
+            if (defined $fk_id) {
+                $o->$ref_from( $fk_id );
+            }
+            else {
+                # undef ids of foreign key assignments should clear the ref_from attribute
+                $ref_from_attr->clear_value($o);
+            }
+            return $accessor->(@_);
+        }
+        else {
+            # this is a read operation
+            my $fk_id = $o->$ref_from;
+            my $v = $attr->get_value($o);
+            if (defined($fk_id) && not(defined $v)) {
+                $fk = $o->datastore->find($ref_to_class)->get($fk_id);
+                $attr->set_value($o, $fk); # cache!
+                return $fk;
+            }
+            elsif (defined($v) && not(defined $fk_id)) {
+            }
+        }
+        return $accessor->(@_);
+    };
+}
+
 sub datastore_class_setup {
     my ($self, %p) = @_;
     my $metaclass = $self;
@@ -140,37 +204,17 @@ sub datastore_class_setup {
             my $ref_to_attr = $attr->ref_to_attr;
             my $ref_to_attr_name = $ref_to_attr->name;
             my $ref_to_class = $ref_to_attr->associated_class->name;
-            # wrap accessor 
-            $metaclass->add_around_method_modifier( $attr->name, sub {
-                my $accessor = shift @_;
-                my ($o, $fk) = @_;
-                if (scalar @_ == 2) { # this is a set operation
-                    ($fk->isa($ref_to_class))
-                        or croak "Failed ForeignKey constraint, expects $ref_to_class";
-                    my $fk_id = $fk->$ref_to_attr_name;
-                    if (defined $fk_id) {
-                        $o->$ref_from( $fk_id );
-                    }
-                    else {
-                        # undef ids of foreign key assignments should clear the ref_from attribute
-                        $ref_from_attr->clear_value($o);
-                    }
-                    return $accessor->(@_);
-                }
-                else {
-                    # this is a read operation
-                    my $fk_id = $o->$ref_from;
-                    my $v = $attr->get_value($o);
-                    if (defined($fk_id) && not(defined $v)) {
-                        $fk = $o->datastore->find($ref_to_class)->get($fk_id);
-                        $attr->set_value($o, $fk); # cache!
-                        return $fk;
-                    }
-                    elsif (defined($v) && not(defined $fk_id)) {
-                    }
-                }
-                return $accessor->(@_);
-            });
+            my $args = {
+                attr                => $attr,
+                ref_from            => $ref_from,
+                ref_from_attr       => $ref_from_attr,
+                ref_to_attr         => $ref_to_attr,
+                ref_to_attr_name    => $ref_to_attr_name,
+                ref_to_class        => $ref_to_class,
+            };
+            # wrappers
+            $metaclass->add_around_method_modifier( $attr->name, $self->_get_forward_fk_method_modifier( $args ) );
+            $ref_to_class->meta->add_method( $attr->reverse_link, $self->_get_reverse_fk_method( $args ) );
         }
     }
     MooseX::DataStore::Meta::Role->meta->apply($metaclass);

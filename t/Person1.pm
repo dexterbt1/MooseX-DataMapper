@@ -47,6 +47,7 @@ has 'person' => (
     traits              => [qw/ForeignKey/],
     ref_from            => 'person_id',
     ref_to              => [qw/Person id/],
+    reverse_link        => 'addresses',
     is                  => 'rw',
 );
 
