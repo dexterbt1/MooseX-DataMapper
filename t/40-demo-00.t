@@ -166,20 +166,10 @@ ok 1;
 =cut
 
 $ds->objects('Address|a', 'Person|p')
-   ->where({ 'a.person_id' => 'p.id' })
-   ->AND
-   ->where({ 'p.name' => { -like => "Bo%" } })
-   ->limit(1)
-   ->get_objects;
+   ->columns(qw/ p.name|person COUNT(a.id)|count_addresses /)
+   ->group_by('a.id')
+   ->get_rows;
 
-$ds->objects('Address')
-   ->count('id')
-   ->get_objects;
-
-$ds->objects('Address')
-   ->count('id')
-   ->group_by('person_id')
-   ->get_objects;
 
 =cut
 

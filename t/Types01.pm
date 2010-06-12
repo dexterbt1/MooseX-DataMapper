@@ -28,7 +28,7 @@ has 'name' => (
 
 has 'company' => (
     traits              => [qw/ForeignKey/],
-    ref_to              => [qw/Company id/],
+    ref_to              => [qw/Company/],
     reverse_link        => 'employees',
     is                  => 'rw',
 );

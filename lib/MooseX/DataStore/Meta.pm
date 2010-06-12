@@ -48,6 +48,10 @@ has 'ref_to' => (
         my ($fk_class, $attr_name) = @$v;
         ($fk_class->can('does') && $fk_class->does('MooseX::DataStore::Meta::Role'))
             or croak "ref_to fk_class refers to an invalid/non-persistent fk_class ($fk_class)";
+        if (not defined $attr_name) {
+            # implicitly use the primary key of the fk_class
+            $attr_name = $fk_class->meta->primary_key->name;
+        }
         my $attr = $fk_class->meta->get_attribute($attr_name);
         (defined $attr)
             or croak "ref_to attribute refers to an invalid/non-persistent attribute ($attr_name)";
