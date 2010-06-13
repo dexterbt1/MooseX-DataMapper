@@ -1,14 +1,14 @@
-package MooseX::DataStore::WorkUnit::Update;
+package MooseX::DataMapper::WorkUnit::Update;
 use strict;
 use Moose;
 use Carp;
 use DBIx::Simple;
 use Data::Dumper;
 
-extends 'MooseX::DataStore::WorkUnit';
+extends 'MooseX::DataMapper::WorkUnit';
 
 has 'target' => (
-    does            => 'MooseX::DataStore::Meta::Role',
+    does            => 'MooseX::DataMapper::Meta::Role',
     is              => 'rw',
 );
 
@@ -22,8 +22,8 @@ sub execute {
     my $where = { 
         $pk_column => delete($data->{$pk_column}),
     };
-    my ($stmt, @bind) = $self->datastore->sqlabs->update( $table, $data, $where );
-    my $dbixs = $self->datastore->dbixs;
+    my ($stmt, @bind) = $self->session->sqlabs->update( $table, $data, $where );
+    my $dbixs = $self->session->dbixs;
     $dbixs->query( $stmt, @bind );
     ##print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
 }

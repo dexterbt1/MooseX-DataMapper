@@ -1,16 +1,16 @@
-package MooseX::DataStore::Meta::Role;
+package MooseX::DataMapper::Meta::Role;
 use strict;
 use Moose::Role;
 use Carp;
 
 # inside-out 
-my $datastore_of = { };
-sub datastore {
+my $session_of = { };
+sub datamapper_session {
     my $self = shift @_;
     if (@_) {
-        $datastore_of->{"$self"} = shift @_;
+        $session_of->{"$self"} = shift @_;
     }
-    return $datastore_of->{"$self"};
+    return $session_of->{"$self"};
 }
 
 sub pk {
@@ -31,7 +31,7 @@ sub get_data_hash {
         if ( ($metaclass->primary_key->name eq $attr_name) and (not defined $value) ) {
             next; # skip undefined primary keys
         }
-        #my $k = $self->datastore->dbh->quote_identifier( $column );
+        #my $k = $self->session->dbh->quote_identifier( $column );
         my $k = $column;
         $o->{$k} = $value;
     }

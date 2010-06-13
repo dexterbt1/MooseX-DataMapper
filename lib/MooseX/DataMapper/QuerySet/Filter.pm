@@ -1,11 +1,11 @@
-package MooseX::DataStore::QuerySet::Filter;
+package MooseX::DataMapper::QuerySet::Filter;
 use strict;
 use Moose;
 use Carp;
 use Scalar::Util qw/blessed/;
 
 has 'queryset' => (
-    isa             => 'MooseX::DataStore::QuerySet',
+    isa             => 'MooseX::DataMapper::QuerySet',
     is              => 'rw',
     required        => 1,
 );

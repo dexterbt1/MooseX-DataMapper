@@ -1,7 +1,7 @@
 package X;
 use strict;
-use MooseX::DataStore;
-use Moose -traits => qw/DataStore::Class/;
+use MooseX::DataMapper;
+use Moose -traits => qw/DataMapper::Class/;
 
 has 'a' => (
     traits              => [qw/Persistent/],
@@ -18,15 +18,15 @@ has 'b' => (
 );
 
 
-__PACKAGE__->meta->datastore_class_setup(
+__PACKAGE__->meta->datamapper_class_setup(
     -table              => 'x',
 );
 
 
 package Point;
 use strict;
-use MooseX::DataStore;
-use Moose -traits => qw/DataStore::Class/;
+use MooseX::DataMapper;
+use Moose -traits => qw/DataMapper::Class/;
 
 has ['x', 'y'] => (
     traits              => [qw/Persistent/],
@@ -34,15 +34,15 @@ has ['x', 'y'] => (
     is                  => 'rw',
 );
 
-__PACKAGE__->meta->datastore_class_setup(
+__PACKAGE__->meta->datamapper_class_setup(
     -table              => 'point',
 );
 
 
 package Rect;
 use strict;
-use MooseX::DataStore;
-use Moose -traits => qw/DataStore::Class/;
+use MooseX::DataMapper;
+use Moose -traits => qw/DataMapper::Class/;
 use Carp;
 
 has ['width', 'height'] => (
@@ -68,7 +68,7 @@ has 'point' => (
     is                  => 'rw',
 );
 
-__PACKAGE__->meta->datastore_class_setup(
+__PACKAGE__->meta->datamapper_class_setup(
     -table              => 'rect',
 );
 

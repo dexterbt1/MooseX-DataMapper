@@ -1,7 +1,7 @@
 package Company;
 use strict;
-use MooseX::DataStore;
-use Moose -traits => qw/DataStore::Class/;
+use MooseX::DataMapper;
+use Moose -traits => qw/DataMapper::Class/;
 
 has 'name' => (
     traits              => [qw/Persistent/],
@@ -9,15 +9,15 @@ has 'name' => (
     is                  => 'rw',
 );
 
-__PACKAGE__->meta->datastore_class_setup(
+__PACKAGE__->meta->datamapper_class_setup(
     -table              => 'company',
 );
 
 
 package Employee;
 use strict;
-use MooseX::DataStore;
-use Moose -traits => qw/DataStore::Class/;
+use MooseX::DataMapper;
+use Moose -traits => qw/DataMapper::Class/;
 use Carp;
 
 has 'name' => (
@@ -33,7 +33,7 @@ has 'company' => (
     is                  => 'rw',
 );
 
-__PACKAGE__->meta->datastore_class_setup(
+__PACKAGE__->meta->datamapper_class_setup(
     -table              => 'employee',
 );
 

@@ -1,10 +1,11 @@
 use strict;
 use warnings;
 use Test::More qw/no_plan/;
+use Test::Exception;
 
 BEGIN {
     use_ok 'DBI';
-    use_ok 'MooseX::DataStore';
+    use_ok 'MooseX::DataMapper';
     require 't/Person1.pm';
 }
 
@@ -17,14 +18,15 @@ $dbh->do(<<"EOT");
     CREATE TABLE address (id INTEGER PRIMARY KEY AUTOINCREMENT, city VARCHAR(64), person_uid INTEGER REFERENCES person (uid) );
 EOT
 
-my $ds = MooseX::DataStore->connect($dbh);
+my $ds = MooseX::DataMapper->connect($dbh);
 
 my $john = Person->new( name => 'John' );
 is $john->id, undef;
 
-is $john->datastore, undef;
+is $john->datamapper_session, undef;
 
 $ds->save($john);
+is $john->datamapper_session, $ds;
 isnt $john->id, undef;
 is $john->name, 'John';
 
@@ -103,7 +105,16 @@ isnt $matt, $matts_addr->person;
 # =================================
 # start a new session
 
-$ds = MooseX::DataStore->connect($dbh);
+my $old_ds = $ds;
+
+$ds = MooseX::DataMapper->connect($dbh);
+
+# you can't mix match the sessions, once an object instance was saved in a datamapper
+# it's bound to it for the object lifetime
+
+dies_ok {
+    $ds->save( $matt );
+} 'datamapper bind';
 
 my $places;
 $places = $ds->objects('Address')->filter('city = ?', 'London')->limit(1)->get_objects;

@@ -1,14 +1,14 @@
-package MooseX::DataStore::QuerySet;
+package MooseX::DataMapper::QuerySet;
 use strict;
 use Moose;
-use MooseX::DataStore;
-use MooseX::DataStore::QuerySet::Filter;
-use MooseX::DataStore::QuerySet::Conjunction;
+use MooseX::DataMapper;
+use MooseX::DataMapper::QuerySet::Filter;
+use MooseX::DataMapper::QuerySet::Conjunction;
 use Carp;
 use Scalar::Util qw/blessed/;
 
-has 'datastore' => (
-    isa             => 'MooseX::DataStore',
+has 'session' => (
+    isa             => 'MooseX::DataMapper::Session',
     is              => 'rw',
     required        => 1,
 );
@@ -21,7 +21,7 @@ has 'class_spec' => (
         (scalar @$v > 0)
             or croak "Invalid query class_spec";
         foreach my $spec (@$v) {
-            ($spec->can('does') && $spec->does('MooseX::DataStore::Meta::Role'))
+            ($spec->can('does') && $spec->does('MooseX::DataMapper::Meta::Role'))
                 or croak "$spec is not a valid persistent class";
         }
     },
@@ -46,14 +46,14 @@ has 'sql_offset' => (
 );
 
 has 'static_filters' => (
-    isa             => 'ArrayRef[MooseX::DataStore::QuerySet::Filter]',
+    isa             => 'ArrayRef[MooseX::DataMapper::QuerySet::Filter]',
     is              => 'rw',
     lazy            => 1,
     default         => sub { [] },
 );
 
 has 'filters' => (
-    isa             => 'ArrayRef[MooseX::DataStore::QuerySet::Filter|MooseX::DataStore::QuerySet::Conjunction]',
+    isa             => 'ArrayRef[MooseX::DataMapper::QuerySet::Filter|MooseX::DataMapper::QuerySet::Conjunction]',
     is              => 'rw',
     lazy            => 1,
     default         => sub { [] },
@@ -71,7 +71,7 @@ sub _get_columns {
 
 sub _get_resultset {
     my ($self) = @_;
-    my $ds = $self->datastore;
+    my $ds = $self->session;
     $ds->flush;
     my $class = $self->class_spec->[0]; # support single table for now
     my $table = $class->meta->table;
@@ -89,7 +89,7 @@ sub _get_resultset {
     }
     
     foreach my $item (@{$self->filters}) {
-        if ($item->isa('MooseX::DataStore::QuerySet::Conjunction')) {
+        if ($item->isa('MooseX::DataMapper::QuerySet::Conjunction')) {
             $where_stmt .= ' '.$item->term.' ';
             next;
         }
@@ -125,7 +125,7 @@ sub _new_object {
             $args->{$attr_name} = $row->{$col};
         }
         $o = $class->new(%$args);
-        $o->datastore( $self->datastore );
+        $o->datamapper_session( $self->session );
     }
     return $o;
 }
@@ -137,9 +137,9 @@ sub _apply_conjunction {
     ($len > 0)
         or croak "Conjunction cannot be applied to an empty QuerySet";
     my $head = $self->filters->[-1];
-    ($head->isa('MooseX::DataStore::QuerySet::Filter'))
+    ($head->isa('MooseX::DataMapper::QuerySet::Filter'))
         or croak "QuerySet Conjunction should only be applied after a Filter";
-    push @{$self->filters}, MooseX::DataStore::QuerySet::Conjunction->new( term => $term );
+    push @{$self->filters}, MooseX::DataMapper::QuerySet::Conjunction->new( term => $term );
 }
 
 
@@ -159,14 +159,14 @@ sub _add_filter {
     my $clause;
     my $bind_params = \@bind;
     if (ref($where_clause) eq 'HASH') {
-        ($clause, my @b) = $self->datastore->sqlabs->where($where_clause);
+        ($clause, my @b) = $self->session->sqlabs->where($where_clause);
         $clause =~ s[^\s*WHERE\s*][];
         $bind_params = \@b;
     }
     else {
         $clause = '('.$where_clause.')';
     }
-    push @{$self->$collection}, MooseX::DataStore::QuerySet::Filter->new( 
+    push @{$self->$collection}, MooseX::DataMapper::QuerySet::Filter->new( 
         queryset    => $self,
         clause      => $clause,
         bind_params => $bind_params,

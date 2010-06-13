@@ -5,7 +5,7 @@ use Test::Exception;
 
 BEGIN {
     use_ok 'DBI';
-    use_ok 'MooseX::DataStore';
+    use_ok 'MooseX::DataMapper';
 }
 require 't/Types01.pm';
 
@@ -18,7 +18,7 @@ $dbh->do(<<"EOT");
     CREATE TABLE employee (id INTEGER PRIMARY KEY AUTOINCREMENT, company_id INTEGER REFERENCES point (id), name VARCHAR);
 EOT
 
-my $ds = MooseX::DataStore->connect($dbh);
+my $ds = MooseX::DataMapper->connect($dbh);
 
 $ds->save_deep( Company->new( name => "Apple" ) );
 

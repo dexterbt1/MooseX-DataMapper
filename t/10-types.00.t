@@ -5,7 +5,7 @@ use Test::Exception;
 
 BEGIN {
     use_ok 'DBI';
-    use_ok 'MooseX::DataStore';
+    use_ok 'MooseX::DataMapper';
     require 't/Types00.pm';
 }
 
@@ -24,10 +24,10 @@ EOT
 my $ds;
 
 dies_ok {
-    $ds = MooseX::DataStore->connect( DBI->connect("dbi:SQLite:dbname=:memory:","","") );
+    $ds = MooseX::DataMapper->connect( DBI->connect("dbi:SQLite:dbname=:memory:","","") );
 } 'raise error needed';
 
-$ds = MooseX::DataStore->connect($dbh);
+$ds = MooseX::DataMapper->connect($dbh);
 
 my ($i, $o);
 

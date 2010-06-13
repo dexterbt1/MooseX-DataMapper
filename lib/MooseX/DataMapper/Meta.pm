@@ -1,4 +1,4 @@
-package MooseX::DataStore::Meta::Attribute::Trait::Persistent;
+package MooseX::DataMapper::Meta::Attribute::Trait::Persistent;
 use strict;
 use Moose::Role;
 
@@ -8,13 +8,13 @@ has 'column' => (
 );
 
 package Moose::Meta::Attribute::Custom::Trait::Persistent;
-sub register_implementation {'MooseX::DataStore::Meta::Attribute::Trait::Persistent'}
+sub register_implementation {'MooseX::DataMapper::Meta::Attribute::Trait::Persistent'}
 
 
 # =================================================================
 
 
-package MooseX::DataStore::Meta::Attribute::Trait::ForeignKey;
+package MooseX::DataMapper::Meta::Attribute::Trait::ForeignKey;
 use strict;
 use Moose::Role;
 use Carp;
@@ -46,7 +46,7 @@ has 'ref_to' => (
     trigger         => sub {
         my ($self, $v) = @_;
         my ($fk_class, $attr_name) = @$v;
-        ($fk_class->can('does') && $fk_class->does('MooseX::DataStore::Meta::Role'))
+        ($fk_class->can('does') && $fk_class->does('MooseX::DataMapper::Meta::Role'))
             or croak "ref_to fk_class refers to an invalid/non-persistent fk_class ($fk_class)";
         if (not defined $attr_name) {
             # implicitly use the primary key of the fk_class
@@ -68,19 +68,19 @@ has 'reverse_link' => (
 
 
 package Moose::Meta::Attribute::Custom::Trait::ForeignKey;
-sub register_implementation {'MooseX::DataStore::Meta::Attribute::Trait::ForeignKey'}
+sub register_implementation {'MooseX::DataMapper::Meta::Attribute::Trait::ForeignKey'}
 
 
 # =================================================================
 
-package MooseX::DataStore::Meta::Class::Trait::DataStore::Class;
+package MooseX::DataMapper::Meta::Class::Trait::DataMapper::Class;
 use Moose::Role;
-use MooseX::DataStore::Meta::Role;
+use MooseX::DataMapper::Meta::Role;
 use Carp;
 
 has 'primary_key' => (
     is              => 'rw',
-    does            => 'MooseX::DataStore::Meta::Attribute::Trait::Persistent',
+    does            => 'MooseX::DataMapper::Meta::Attribute::Trait::Persistent',
 );
 
 has 'table' => (
@@ -137,7 +137,7 @@ sub _get_reverse_fk_method {
     my $ref_from_class      = $ref_from_attr->associated_class->name;
     return sub {
         my ($self) = @_;
-        return $self->datastore->objects($ref_from_class)
+        return $self->datamapper_session->objects($ref_from_class)
                                ->static_filter({ $ref_from => $ref_to_attr->get_value($self) });
     };
 }
@@ -172,7 +172,7 @@ sub _get_forward_fk_method_modifier {
             my $fk_id = $ref_from_attr->get_value($o);
             my $v = $attr->get_value($o);
             if (defined($fk_id) && not(defined $v)) {
-                $fk = $o->datastore->objects($ref_to_class)->get($fk_id);
+                $fk = $o->datamapper_session->objects($ref_to_class)->get($fk_id);
                 $attr->set_value($o, $fk); # cache!
                 return $fk;
             }
@@ -196,7 +196,7 @@ sub _add_persistent_attribute {
 }
 
 
-sub datastore_class_setup {
+sub datamapper_class_setup {
     my ($self, %p) = @_;
     my $metaclass = $self;
     if (exists $p{-table}) { $metaclass->table($p{-table}); }
@@ -207,10 +207,10 @@ sub datastore_class_setup {
         $self->_add_auto_pk;
     }
     foreach my $attr ($metaclass->get_all_attributes) {
-        if ($attr->does('MooseX::DataStore::Meta::Attribute::Trait::Persistent')) {
+        if ($attr->does('MooseX::DataMapper::Meta::Attribute::Trait::Persistent')) {
             $self->_add_persistent_attribute($attr);
         }
-        elsif ($attr->does('MooseX::DataStore::Meta::Attribute::Trait::ForeignKey')) {
+        elsif ($attr->does('MooseX::DataMapper::Meta::Attribute::Trait::ForeignKey')) {
             push @{$metaclass->foreignkey_attributes}, $attr;
 
             my $ref_to_attr = $attr->ref_to_attr;
@@ -245,12 +245,12 @@ sub datastore_class_setup {
             $ref_to_class->meta->add_method( $attr->reverse_link, $self->_get_reverse_fk_method( $args ) );
         }
     }
-    MooseX::DataStore::Meta::Role->meta->apply($metaclass);
+    MooseX::DataMapper::Meta::Role->meta->apply($metaclass);
 }
 
 
-package Moose::Meta::Class::Custom::Trait::DataStore::Class;
-sub register_implementation { 'MooseX::DataStore::Meta::Class::Trait::DataStore::Class' }
+package Moose::Meta::Class::Custom::Trait::DataMapper::Class;
+sub register_implementation { 'MooseX::DataMapper::Meta::Class::Trait::DataMapper::Class' }
 
 
 1;

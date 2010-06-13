@@ -1,10 +1,10 @@
-package MooseX::DataStore::WorkUnit;
+package MooseX::DataMapper::WorkUnit;
 use strict;
 use Moose;
 use Carp;
 
-has 'datastore' => (
-    isa             => 'MooseX::DataStore',
+has 'session' => (
+    isa             => 'MooseX::DataMapper::Session',
     is              => 'rw',
 );
 

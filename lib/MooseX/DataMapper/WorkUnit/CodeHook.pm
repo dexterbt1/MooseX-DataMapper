@@ -1,11 +1,11 @@
-package MooseX::DataStore::WorkUnit::CodeHook;
+package MooseX::DataMapper::WorkUnit::CodeHook;
 use strict;
 use Moose;
 use Carp;
 use DBIx::Simple;
 use Data::Dumper;
 
-extends 'MooseX::DataStore::WorkUnit';
+extends 'MooseX::DataMapper::WorkUnit';
 
 has 'hook' => (
     isa             => 'CodeRef',

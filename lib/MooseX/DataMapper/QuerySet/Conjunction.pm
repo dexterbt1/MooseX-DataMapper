@@ -1,4 +1,4 @@
-package MooseX::DataStore::QuerySet::Conjunction;
+package MooseX::DataMapper::QuerySet::Conjunction;
 use strict;
 use Moose;
 use Carp;

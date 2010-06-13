@@ -1,4 +1,4 @@
-package MooseX::DataStore;
+package MooseX::DataMapper::Session;
 use strict;
 use warnings;
 use Moose;
@@ -8,16 +8,16 @@ use SQL::Abstract::Limit;
 use Scalar::Util qw/weaken/;
 use Carp;
 
-use MooseX::DataStore::Meta;
-use MooseX::DataStore::QuerySet;
-use MooseX::DataStore::WorkUnit::CodeHook;
-use MooseX::DataStore::WorkUnit::Insert;
-use MooseX::DataStore::WorkUnit::Update;
+use MooseX::DataMapper::Meta;
+use MooseX::DataMapper::QuerySet;
+use MooseX::DataMapper::WorkUnit::Insert;
+use MooseX::DataMapper::WorkUnit::Update;
 
 
 has 'dbh' => (
     isa             => 'DBI::db',
     is              => 'rw',
+    required        => 1,
     trigger         => sub {
         my ($self, $v) = @_;
         $v->ping
@@ -40,20 +40,10 @@ has 'dbixs' => (
 );
 
 has 'work_unflushed' => (
-    isa             => 'ArrayRef[MooseX::DataStore::WorkUnit]',
+    isa             => 'ArrayRef[MooseX::DataMapper::WorkUnit]',
     is              => 'rw',
     default         => sub { [] },
 );
-
-
-sub connect {
-    my $class = shift @_;
-    my $self = $class->new;
-    if (blessed($_[0]) and $_[0]->isa('DBI::db')) {
-        $self->dbh($_[0]);        
-    }
-    return $self;
-}
 
 
 sub save {
@@ -92,13 +82,14 @@ sub save_one {
     my ($self, $i) = @_;
     eval {
         if (defined $i->pk) {
+            ($i->datamapper_session == $self)
+                or croak "Cannot save a previously bound object into another session";
             # update
-            MooseX::DataStore::WorkUnit::Update->new( datastore => $self, target => $i )->execute;
+            MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
         }
         else {
             # not pk yet, insert
-            $i->datastore( $self );
-            MooseX::DataStore::WorkUnit::Insert->new( datastore => $self, target => $i )->execute;
+            MooseX::DataMapper::WorkUnit::Insert->new( session => $self, target => $i )->execute;
         }
     };
     if ($@) { croak $@; }
@@ -115,7 +106,7 @@ sub flush {
 
 sub objects {
     my ($self, @class_spec) = @_;
-    return MooseX::DataStore::QuerySet->new( datastore => $self, class_spec => \@class_spec );
+    return MooseX::DataMapper::QuerySet->new( session => $self, class_spec => \@class_spec );
 }
 
 
