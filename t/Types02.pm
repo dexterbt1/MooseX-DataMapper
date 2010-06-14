@@ -9,10 +9,6 @@ has 'name' => (
     is                  => 'rw',
 );
 
-__PACKAGE__->meta->datamapper_class_setup(
-    -table              => 'company',
-);
-
 
 package Employee;
 use strict;
@@ -33,10 +29,10 @@ has 'company' => (
     is                  => 'rw',
 );
 
-__PACKAGE__->meta->datamapper_class_setup(
-    -table              => 'employee',
-);
+package main;
 
+Company->meta->datamapper_class_setup( -table => 'company' );
+Employee->meta->datamapper_class_setup( -table => 'employee' );
 
 
 1;

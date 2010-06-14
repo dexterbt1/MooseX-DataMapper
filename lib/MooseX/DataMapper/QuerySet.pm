@@ -87,8 +87,11 @@ sub _get_resultset {
             $count++;
         }
     }
-    
+    if ( (scalar(@{$self->filters}) > 0) && (scalar(@{$self->static_filters}) > 0) ) {
+        $where_stmt .= ' AND ';
+    }
     foreach my $item (@{$self->filters}) {
+        
         if ($item->isa('MooseX::DataMapper::QuerySet::Conjunction')) {
             $where_stmt .= ' '.$item->term.' ';
             next;
@@ -259,6 +262,42 @@ sub get_objects {
     return \@result;
 }
 
+
+package MooseX::DataMapper::AssociationQuerySet;
+use strict;
+use Moose;
+
+extends 'MooseX::DataMapper::QuerySet';
+
+has 'parent_object' => (
+    does                => 'MooseX::DataMapper::Meta::Role',
+    is                  => 'rw',
+    required            => 1,
+);
+
+has 'fk_attr' => (
+    isa                 => 'Moose::Meta::Attribute',
+    is                  => 'rw',
+    required            => 1,
+);
+
+has 'ref_from_attr' => (
+    isa                 => 'Moose::Meta::Attribute',
+    is                  => 'rw',
+    required            => 1,
+);
+
+has 'ref_to_attr' => (
+    isa                 => 'Moose::Meta::Attribute',
+    is                  => 'rw',
+    required            => 1,
+);
+
+sub save {
+    my ($self, $i) = @_;
+    $self->fk_attr->set_value( $i, $self->parent_object );
+    $self->session->save( $i );
+}
 
 
 

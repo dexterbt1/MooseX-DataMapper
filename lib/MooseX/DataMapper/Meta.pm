@@ -20,51 +20,59 @@ use Moose::Role;
 use Carp;
 use Data::Dumper;
 
+# public
 has 'ref_from' => (
     isa             => 'Str',
     is              => 'rw',
-    trigger         => sub {
-        my ($self, $v) = @_;
-        # TODO: this is a hack, while I don't know the proper solution for this: 
-        # we need to in order to check for correct
-        my $class = $self->definition_context->{package};
-        my $attr = $class->meta->get_attribute($v);
-        (defined($attr) && ($attr->does('Persistent')))
-            or croak "ref_from refers to an invalid/non-persistent attribute ($v)";
-    },
 );
 
+# private
+has 'ref_from_attr' => (
+    isa             => 'Moose::Meta::Attribute',
+    is              => 'rw',
+);
+
+# private
 has 'ref_to_attr' => (
     isa             => 'Moose::Meta::Attribute',
     is              => 'rw',
 );
 
+# public
 has 'ref_to' => (
     isa             => 'ArrayRef[Str]',
     is              => 'rw',
     required        => 1,
-    trigger         => sub {
-        my ($self, $v) = @_;
-        my ($fk_class, $attr_name) = @$v;
-        ($fk_class->can('does') && $fk_class->does('MooseX::DataMapper::Meta::Role'))
-            or croak "ref_to fk_class refers to an invalid/non-persistent fk_class ($fk_class)";
-        if (not defined $attr_name) {
-            # implicitly use the primary key of the fk_class
-            $attr_name = $fk_class->meta->primary_key->name;
-        }
-        my $attr = $fk_class->meta->get_attribute($attr_name);
-        (defined $attr)
-            or croak "ref_to attribute refers to an invalid/non-persistent attribute ($attr_name)";
-        $self->ref_to_attr( $attr );
-    },
 );
 
-has 'reverse_link' => (
+# public
+has 'association_link' => (
     isa             => 'Str',
     is              => 'rw',
     required        => 1,
 );
 
+# private 
+has 'association_attr' => (
+    isa             => 'Moose::Meta::Attribute',
+    is              => 'rw',
+);
+
+sub init_ref_to {
+    my ($self) = @_;
+    my $v = $self->ref_to;
+    my ($fk_class, $attr_name) = @$v;
+    ($fk_class->can('does') && $fk_class->does('MooseX::DataMapper::Meta::Role'))
+        or croak "ref_to attribute refers to an invalid/non-persistent fk_class ($fk_class)";
+    if (not defined $attr_name) {
+        # implicitly use the primary key of the fk_class
+        $attr_name = $fk_class->meta->primary_key->name;
+    }
+    my $attr = $fk_class->meta->get_attribute($attr_name);
+    (defined $attr)
+        or croak "ref_to attribute refers to an invalid/non-persistent attribute ($attr_name)";
+    $self->ref_to_attr( $attr );
+}
 
 
 package Moose::Meta::Attribute::Custom::Trait::ForeignKey;
@@ -135,10 +143,20 @@ sub _get_reverse_fk_method {
     my $ref_to_attr_name    = $args->{ref_to_attr_name};
     my $ref_to_class        = $args->{ref_to_class};
     my $ref_from_class      = $ref_from_attr->associated_class->name;
+    my $association_link    = $attr->association_link;
     return sub {
         my ($self) = @_;
-        return $self->datamapper_session->objects($ref_from_class)
-                               ->static_filter({ $ref_from => $ref_to_attr->get_value($self) });
+        (defined $self->datamapper_session)
+            or croak "Cannot access association ($association_link) in an unbound object";
+        my $qs = MooseX::DataMapper::AssociationQuerySet->new( 
+            session         => $self->datamapper_session,
+            class_spec      => [$ref_from_class],
+            parent_object   => $self,
+            fk_attr         => $attr,
+            ref_from_attr   => $ref_from_attr,
+            ref_to_attr     => $ref_to_attr,
+        );
+        return $qs->static_filter({ $ref_from => $ref_to_attr->get_value($self) });
     };
 }
 
@@ -212,11 +230,14 @@ sub datamapper_class_setup {
         }
         elsif ($attr->does('MooseX::DataMapper::Meta::Attribute::Trait::ForeignKey')) {
             push @{$metaclass->foreignkey_attributes}, $attr;
+            $attr->init_ref_to;
 
             my $ref_to_attr = $attr->ref_to_attr;
             my $ref_to_attr_name = $ref_to_attr->name;
             my $ref_to_class = $ref_to_attr->associated_class->name;
 
+            # setup ref_from
+            
             if (not defined $attr->ref_from) {
                 my $name = lc($ref_to_class).'_'.lc($ref_to_attr_name);
                 my $x = $metaclass->add_attribute(
@@ -232,6 +253,15 @@ sub datamapper_class_setup {
             }
             my $ref_from = $attr->ref_from;
             my $ref_from_attr = $metaclass->get_attribute($ref_from);
+            (defined($ref_from_attr) && $ref_from_attr->does("Persistent"))
+                or croak "ref_from for class ".$metaclass->name." refers to an invalid/non-persistent attribute";
+            $attr->ref_from_attr($ref_from_attr);            
+
+            # check association link 
+            (not $ref_to_class->can( $attr->association_link ))
+                or croak "association_link ".$attr->association_link." refers to an already existing method in class ".$ref_to_class->meta->name;
+
+            # wrappers to simple fk relationship
             my $args = {
                 attr                => $attr,
                 ref_from            => $ref_from,
@@ -240,9 +270,8 @@ sub datamapper_class_setup {
                 ref_to_attr_name    => $ref_to_attr_name,
                 ref_to_class        => $ref_to_class,
             };
-            # wrappers to simple fk relationship
             $metaclass->add_around_method_modifier( $attr->name, $self->_get_forward_fk_method_modifier( $args ) );
-            $ref_to_class->meta->add_method( $attr->reverse_link, $self->_get_reverse_fk_method( $args ) );
+            $ref_to_class->meta->add_method( $attr->association_link, $self->_get_reverse_fk_method( $args ) );
         }
     }
     MooseX::DataMapper::Meta::Role->meta->apply($metaclass);

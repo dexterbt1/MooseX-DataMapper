@@ -64,7 +64,7 @@ has 'point' => (
     traits              => [qw/ForeignKey/],
     ref_from            => 'point_id',
     ref_to              => [qw/Point id/],
-    reverse_link        => 'rects',
+    association_link    => 'rects',
     is                  => 'rw',
 );
 

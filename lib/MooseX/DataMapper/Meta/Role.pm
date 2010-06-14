@@ -38,6 +38,11 @@ sub get_data_hash {
     return $o;
 }
 
+sub DESTROY {
+    my ($self) = @_;
+    delete $session_of->{"$self"};
+}
+
 1;
 
 __END__
