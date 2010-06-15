@@ -7,7 +7,7 @@ BEGIN {
     use_ok 'DBI';
     use_ok 'MooseX::DataMapper';
 }
-require 't/Types01.pm';
+require 't/CompanyEmp.pm';
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
 #my $dbh = DBI->connect("DBI:mysql:database=autorun:","root","", { RaiseError => 1 });

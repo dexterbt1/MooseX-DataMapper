@@ -7,7 +7,7 @@ BEGIN {
     use_ok 'DBI';
     use_ok 'MooseX::DataMapper';
 }
-require 't/Types02.pm';
+require 't/CompanyEmp.pm';
 
 # --------------- in database operations
 
