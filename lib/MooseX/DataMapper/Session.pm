@@ -12,6 +12,7 @@ use MooseX::DataMapper::Meta;
 use MooseX::DataMapper::QuerySet;
 use MooseX::DataMapper::WorkUnit::Insert;
 use MooseX::DataMapper::WorkUnit::Update;
+use MooseX::DataMapper::WorkUnit::Delete;
 
 
 has 'dbh' => (
@@ -37,6 +38,18 @@ has 'sqlabs' => (
 has 'dbixs' => (
     isa             => "DBIx::Simple",
     is              => 'rw',
+);
+
+has 'debug' => (
+    isa             => 'Bool',
+    is              => 'rw',
+    default         => 0,
+);
+
+has 'queries' => (
+    isa             => 'ArrayRef[ArrayRef]',
+    is              => 'rw',
+    default         => sub { [] },
 );
 
 has 'work_unflushed' => (
@@ -83,7 +96,7 @@ sub save_one {
     eval {
         if (defined $i->pk) {
             ($i->datamapper_session == $self)
-                or croak "Cannot save a previously bound object into another session";
+                or croak "Cannot save a session-bound object into a different session";
             # update
             MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
         }
@@ -97,11 +110,28 @@ sub save_one {
 }
 
 
-sub flush {
-    my ($self) = @_;
-    while (my $work = shift @{$self->work_unflushed}) {
-        $work->execute;
+sub delete {
+    my ($self, $i) = @_;
+    $self->delete_one($i);
+}
+
+sub delete_one {
+    my ($self, $i) = @_;
+    if (defined $i->pk) {
+        MooseX::DataMapper::WorkUnit::Delete->new( session => $self, target => $i )->execute;
     }
+    else {
+        croak "Cannot save unbound object";
+    }
+}
+
+
+sub flush {
+    # FIXME: this is remnant code when we use to have queued unit of work and identity-map
+    #my ($self) = @_;
+    #while (my $work = shift @{$self->work_unflushed}) {
+    #    $work->execute;
+    #}
 }
 
 sub objects {
@@ -111,6 +141,12 @@ sub objects {
 
 
 # ============================
+
+sub query_log_append {
+    my $self = shift;
+    return if (not $self->debug);
+    push @{$self->queries}, @_;
+}
 
 
 sub enqueue_work {

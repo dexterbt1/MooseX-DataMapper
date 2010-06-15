@@ -54,6 +54,10 @@ $ds->save_deep( $r, 1 );
 isnt $p->id, undef;
 isnt $r->get_point_id, undef;
 
+$ds->delete( $p );
+
+is $p->id, undef;
+
 my $r2 = Rect->new( width => 5, height => 3 );
 
 ok 1;

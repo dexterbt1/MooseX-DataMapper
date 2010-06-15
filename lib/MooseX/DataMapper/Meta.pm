@@ -7,6 +7,12 @@ has 'column' => (
     is              => 'rw',
 );
 
+has 'lazy_select' => (
+    isa             => 'Bool',
+    is              => 'rw',
+    default         => 0,
+);
+
 package Moose::Meta::Attribute::Custom::Trait::Persistent;
 sub register_implementation {'MooseX::DataMapper::Meta::Attribute::Trait::Persistent'}
 

@@ -18,10 +18,11 @@ $dbh->do(<<"EOT");
     CREATE TABLE company (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR);
 EOT
 $dbh->do(<<"EOT");
-    CREATE TABLE employee (id INTEGER PRIMARY KEY AUTOINCREMENT, company_id INTEGER REFERENCES point (id), name VARCHAR);
+    CREATE TABLE employee (id INTEGER PRIMARY KEY AUTOINCREMENT, company_id INTEGER REFERENCES point (id), name VARCHAR, bio BLOB);
 EOT
 
 my $ds = MooseX::DataMapper->connect($dbh);
+$ds->debug(1);
 
 my $msft = Company->new( name => 'Microsoft' );
 $ds->save( $msft );
@@ -53,6 +54,9 @@ is $johndoe->company, $msft;
 
 is scalar(@{$msft->employees->get_objects}), 3;
 
+# association delete
+
+$msft->employees->delete( $johndoe ); # delete by object
 
 
 

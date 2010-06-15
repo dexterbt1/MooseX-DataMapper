@@ -108,7 +108,8 @@ sub _get_resultset {
     if ($@) {
         croak "Failed SQL statement:\n\t$select_stmt\n\t".join("\n\t",@where_bind)."\n";
     }
-    ##print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
+    #print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
+    $ds->query_log_append( [ $select_stmt, \@where_bind ] );
     return $rs;
 }
 
@@ -297,6 +298,12 @@ sub save {
     my ($self, $i) = @_;
     $self->fk_attr->set_value( $i, $self->parent_object );
     $self->session->save( $i );
+}
+
+
+sub delete {
+    my ($self, $i) = @_;
+    $self->session->delete( $i );
 }
 
 

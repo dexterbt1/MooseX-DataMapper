@@ -22,6 +22,13 @@ has 'name' => (
     is                  => 'rw',
 );
 
+has 'bio' => (
+    traits              => [qw/Persistent/],
+    isa                 => 'Str',
+    is                  => 'rw',
+    lazy_select         => 1,
+);
+
 has 'company' => (
     traits              => [qw/ForeignKey/],
     ref_to              => [qw/Company/],

@@ -31,10 +31,10 @@ sub execute {
     my $pk_field = $t->meta->primary_key->name;
     $t->$pk_field( $dbixs->last_insert_id(undef, undef, $table, undef) );
     $t->datamapper_session( $self->session );
-    ##print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
+    #print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
+    $self->session->query_log_append( [ $stmt, @bind ] );
 }
 
 1;
 
 __END__
-
