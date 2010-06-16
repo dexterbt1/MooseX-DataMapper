@@ -6,7 +6,7 @@ An object-relational mapper for persisting / querying Moose-based objects in SQL
 WARNING
 -------
 
-This is experimental / preview stuff and the API and implementaion is still highly fluid and is continuously evolving. This is not (yet) even packaged for / released in CPAN. Standard full disclaimer below.
+This is experimental / preview stuff and the API and implementaion is still highly fluid and is continuously evolving. This is not (yet) even packaged for / released in CPAN. Even the project name may later. Standard full disclaimer below. USE AT YOUR OWN RISK!
 
 
 Features (so far)
@@ -20,9 +20,9 @@ Features (so far)
 TODO / Upcoming:
 ----------------
 
-* Lazy-loaded fields
+* Custom Columns / Aggregation
 * Order-by / Group-By
-* Aggregation
+* Lazy-loaded fields
 * Joins
 
 
@@ -43,11 +43,11 @@ Requirements
 Notes
 -----
 
-Why yet another ORM? I acknowledge that we are standing standing on the shoulders of giants. Moose metaclass programming is indeed very powerful, so much as to learn more about it, I hacked away this code in my few days of vacation free time. This project aims to be practical Moose-friendly persistence solution in the future.
+Why yet another ORM? This project stemmed from getting tired of all my duplicated mapping when I try to marry Moose and DBIx::DataModel. Moose metaclass programming is indeed very powerful, that I simply tried to hack away this code in my few days of vacation free time.
 
-This project borrows from concepts and API of mostly DBIx::DataModel and Django ORM, but not on the Ruby-based DataMapper project. It also tries to reuse SQL::Abstract and DBIx::Simple internally. I am surprised to see that it kind of mirrors the DBIx::Class API although I have zero experience with it.
+This project aims to be practical Moose-friendly persistence solution. I acknowledge that we are standing standing on the shoulders of giants. Concepts and API were inspired from Django's ORM and DBIx::DataModel. It internally uses SQL::Abstract and DBIx::Simple as helpers and for now uses string-substitution as the strategy for SQL generation. 
 
-It also does not (yet?) implement Martin Fowler's DataMapper pattern (P of EAA). No Identity Map or Unit-of-Work patterns either.
+It also does not (yet?) implement Martin Fowler's DataMapper pattern (P of EAA). Data::CapabilityBased seems to be the No Identity Map or Unit-of-Work patterns either.
 
 The current implementation is not yet perldoc documented (given the unstable API state). The tests will act as executable docs for now. See `t/*.t` and `t/*.pm` files for the mean time.
 
