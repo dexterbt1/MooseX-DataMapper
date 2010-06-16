@@ -22,7 +22,7 @@ my $ds = MooseX::DataMapper->connect($dbh);
 
 $ds->save_deep( Company->new( name => "Apple" ) );
 
-my $apple = $ds->objects('Company')->get_first;
+my $apple = $ds->objects('Company')->first;
 is $apple->name, 'Apple';
 isnt $apple->pk, undef;
 
@@ -30,7 +30,7 @@ $apple->name('Apple Inc.');
 
 $ds->save_deep( Employee->new( name => "Steve Jobs", company => $apple ) ); # inserts the emp, updates the company in one go
 
-my $jobs = $apple->employees->get_first;
+my $jobs = $apple->employees->first;
 is $jobs->name, 'Steve Jobs';
 isnt $jobs->id, undef;
 

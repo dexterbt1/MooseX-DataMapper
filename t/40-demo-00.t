@@ -34,7 +34,7 @@ ok $john->id > 0;
 
 my $people;
 
-$people = $ds->objects('Person')->get_objects;
+$people = $ds->objects('Person')->all;
 is ref($people), 'ARRAY';
 is scalar(@$people), 1;
 my $jo = $people->[0];
@@ -54,10 +54,10 @@ is $j->name, 'Johnny';
 my $bob = Person->new( name => 'Bob' );
 $ds->save($bob);
 
-$people = $ds->objects('Person')->get_objects;
+$people = $ds->objects('Person')->all;
 is scalar(@$people), 2;
 
-$people = $ds->objects('Person')->filter('name like ?', '%ohn%')->get_objects;
+$people = $ds->objects('Person')->filter('name like ?', '%ohn%')->all;
 is scalar(@$people), 1;
 $jo = $people->[0];
 is $jo->name, 'Johnny';
@@ -66,7 +66,7 @@ $people = $ds->objects('Person')
              ->filter('name like ?', 'john%')
              ->or
              ->filter({ id => { -in => [ 1, 2 ] } })
-             ->get_objects;
+             ->all;
 
 is scalar @$people, 2;
 
@@ -96,7 +96,7 @@ $ds->save_deep($matts_addr);
 isnt $matts_addr->pk, undef;
 isnt $matts_addr->person_id, undef;
 isnt $matts_addr->person, undef;
-$people = $ds->objects('Person')->filter("name = ?", "Matt")->get_objects;
+$people = $ds->objects('Person')->filter("name = ?", "Matt")->all;
 my $matt = shift @$people;
 ok defined($matt);
 
@@ -117,7 +117,7 @@ dies_ok {
 } 'datamapper bind';
 
 my $places;
-$places = $ds->objects('Address')->filter('city = ?', 'London')->limit(1)->get_objects;
+$places = $ds->objects('Address')->filter('city = ?', 'London')->limit(1)->all;
 is scalar @$places, 1;
 
 my $addr = $places->[0];
@@ -126,7 +126,7 @@ isa_ok $addr->person, 'Person';
 isnt $addr->person, $matt;
 
 $matt = $addr->person;
-$places = $ds->objects('Address')->filter('city = ?', 'London')->limit(1)->get_objects;
+$places = $ds->objects('Address')->filter('city = ?', 'London')->limit(1)->all;
 
 $addr = $places->[0];
 isnt $addr->person, $matt;
@@ -151,26 +151,26 @@ isnt $addr->person_id, undef; # we've saved already, this should have an id alre
 my $paris = Address->new( city => 'Paris', person => $james );
 $ds->save_deep($paris, 1);
 
-$places = $ds->objects('Address')->filter({ city => 'Paris', person_id => $james->pk })->get_objects;
+$places = $ds->objects('Address')->filter({ city => 'Paris', person_id => $james->pk })->all;
 $addr = $places->[0];
 is $addr->city, 'Paris';
 is $addr->person->id, $james->id;
 
 # try querying by person object, not the id
-$addr = $ds->objects('Address')->filter({ city => 'Paris', person => $james })->get_first;
+$addr = $ds->objects('Address')->filter({ city => 'Paris', person => $james })->first;
 is $addr->city, 'Paris';
 is $addr->person->id, $james->id;
 
 
 # reverse foreignkey relationships
 
-$places = $james->addresses->get_objects;
+$places = $james->addresses->all;
 is scalar(@$places), 1;
 
 $addr = $james->addresses->get($paris);
 is $addr->pk, $paris->pk;
 
-#$places = $james->addresses->filter("city = ?", "Paris")->get_objects;
+#$places = $james->addresses->filter("city = ?", "Paris")->all;
 
 ok 1;
 

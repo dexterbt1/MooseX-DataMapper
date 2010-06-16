@@ -30,7 +30,7 @@ $ds->save( $msft );
 $msft->employees->save( Employee->new( name => 'Bill Gates' ) );
 $msft->employees->save( Employee->new( name => 'Steve Balmer' ) );
 
-my $msft_employees = $msft->employees->get_objects;
+my $msft_employees = $msft->employees->all;
 
 is scalar @$msft_employees, 2;
 
@@ -44,7 +44,7 @@ $apple->employees->save( $johndoe );
 isnt $johndoe->pk, undef;
 is $johndoe->company, $apple;
 
-is scalar(@{$apple->employees->get_objects}), 1;
+is scalar(@{$apple->employees->all}), 1;
 
 # transfer john doe from apple to msft
 
@@ -52,7 +52,7 @@ $msft->employees->save( $johndoe );
 
 is $johndoe->company, $msft;
 
-is scalar(@{$msft->employees->get_objects}), 3;
+is scalar(@{$msft->employees->all}), 3;
 
 # association delete
 

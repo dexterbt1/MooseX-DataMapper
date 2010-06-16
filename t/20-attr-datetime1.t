@@ -42,7 +42,7 @@ $ds->save( $p );
 
 isnt $p->pk, undef;
 
-my $p2 = $ds->objects('Person')->get_first;
+my $p2 = $ds->objects('Person')->first;
 
 is $p2->pk, $p->pk;
 is $p2->birth_date->year, 1980;
@@ -66,7 +66,7 @@ $p3->birth_date_copy( $p3->birth_date );
 isnt $p3->birth_date_copy, undef;
 $ds->save($p3);
 
-$p = $ds->objects('Person')->get_first;
+$p = $ds->objects('Person')->first;
 is $p->birth_date_copy->year, 2010;
 is $p->birth_date_copy->month, 1;
 is $p->birth_date->day, 23;

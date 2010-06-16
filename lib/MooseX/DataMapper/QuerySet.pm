@@ -224,10 +224,10 @@ sub offset {
 }
 
 
-# queryset methods that return row(s)
+# queryset methods that return objects
 
 
-sub get_first {
+sub first {
     my ($self) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     if (not defined $self->sql_offset) {
@@ -256,7 +256,7 @@ sub get {
 }
 
 
-sub get_objects {
+sub all {
     my ($self) = @_;
     my $class = $self->class_spec->[0]; # support single table for now
     my $rs = $self->_get_resultset;

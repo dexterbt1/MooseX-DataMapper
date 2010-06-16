@@ -36,7 +36,7 @@ $i->set_b("Hello World");
 
 $ds->save($i);
 
-$o = $ds->objects('X')->filter('a = ?', 1)->get_first;
+$o = $ds->objects('X')->filter('a = ?', 1)->first;
 
 isa_ok $o, 'X';
 is $o->a, 1;
