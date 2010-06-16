@@ -205,12 +205,13 @@ TODO / Upcoming:
 
 * Custom Columns / Aggregation
 * Order-by / Group-By
+* Iterators
 * Lazy-loaded fields
 * Joins
 * Many-To-Many, Cyclic References
 * Inheritance
 * Eager-loading
-* ... and lot more that needs to be addressed
+* ... and likely lot more needing to be addressed
 
 
 Requirements
@@ -230,7 +231,7 @@ Requirements
 Notes
 -----
 
-Why yet another ORM? This project stemmed from getting tired of all my duplicated mapping when I try to marry Moose and DBIx::DataModel. Moose metaclass programming is indeed very powerful, that with it, I simply tried to hack away this code in my few days of vacation time.
+Why yet another ORM? This project stemmed from getting tired of all my duplicated mapping code when I try to marry Moose and DBIx::DataModel. Moose metaclass programming is indeed very powerful, that with it, I simply tried to hack away this code in my few days of vacation time. This will certainly be useful me and I hope others will find it useful as well.
 
 This project aims to be a clean and practical object-relational persistence solution. I acknowledge that we are standing on the shoulders of giants. Concepts and API were inspired by Django's ORM and DBIx::DataModel. Internally, we are using SQL::Abstract and DBIx::Simple as helpers. For now, we are using string-substitution as the strategy for SQL generation. 
 
