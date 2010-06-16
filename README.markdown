@@ -9,8 +9,10 @@ WARNING
 This is experimental / preview stuff and the API and implementaion is still highly fluid and is continuously evolving. This is not (yet) even packaged for / released in CPAN. Even the project name may later. Standard full disclaimer below. USE AT YOUR OWN RISK!
 
 
-Synopsis
+Overview
 --------
+
+#### Class Declarations
 
     package Music::Artist;
     use strict;
@@ -32,8 +34,8 @@ Synopsis
     );
 
     __PACKAGE__->meta->datamapper_class_setup( 
-        -table              => 'artists', # default table
-        -primary_key        => 'id', # note, this refers to the attribute name
+        -table              => 'artists',       # default table
+        -primary_key        => 'id',            # note, this refers to the attribute name
     );
 
     package Music::CD;
@@ -86,31 +88,29 @@ Synopsis
     );
 
 
+#### Meta and Sessions
+
 
     package main;
     use strict;
     use MooseX::DataMapper;
-    use Test::More qw/no_plan/;
-    use Test::Exception;
 
-    Music::Artist->meta->table('artist'); # override the default table
+    # you can override the default table
+    Music::Artist->meta->table('artist'); 
 
-    BEGIN {
-        use_ok 'DBI';
-        use_ok 'MooseX::DataMapper';
-    }
-
+    # create the tables for the demo
     my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
-    $dbh->do(<<"EOT");
-        CREATE TABLE artist (artistid INTEGER PRIMARY KEY AUTOINCREMENT, artistname INTEGER)
-    EOT
-    $dbh->do(<<"EOT");
-        CREATE TABLE cd (cdid INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR, year INT, 
-            artistid INTEGER REFERENCES artist (artistid))
-    EOT
+    $dbh->do(q{ CREATE TABLE artist (artistid INTEGER PRIMARY KEY AUTOINCREMENT, artistname INTEGER) })
+    $dbh->do(q{ CREATE TABLE cd (cdid INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR, year INT, 
+                    artistid INTEGER REFERENCES artist (artistid))
+    })
 
     # in theory, the session object should not be a concern of your domain models.
     my $session = MooseX::DataMapper->connect($dbh);
+
+
+#### Insert/Update/Delete and Relationships
+
 
     my $mj = Music::Artist->new( name => 'Michael Jackson' );
 
@@ -119,34 +119,49 @@ Synopsis
     my $thriller = Music::CD->new( 
         title           => 'Thriller', 
         release_year    => DateTime->new( year => 1981 ),
-        artist          => $mj, # manually assign
+        artist          => $mj,
     );
     $session->save( $thriller ); # inserts
 
-    $thriller->release_year->set_year( 1982 ); 
+    $thriller->release_year->set_year( 1982 ); # 1981 was the wrong year, so change it 
+
     $session->save( $thriller ); # updates
 
-    # automatically associate "Bad" to the artist $mj
+    # save thru the association link method, this will automatically 
+    # associate "Bad" cd to the artist $mj
     $mj->cds->save( 
         Music::CD->new( title => "Bad", release_year => DateTime->new( year => 1987 ) )
     );
 
-    # access all CD objects by $mj as an arrayref
-    foreach my $cd (@{$mj->cds->all}) {
-        print join(", ", $cd->artist->name, $cd->title, $cd->release_year->year), "\n";
-    }
+    my $unreleased1 = Music::CD->new( title => 'This Is It', artist => $mj );
+
+    # manually assign artist thru the persistent FK attr
+    my $unreleased2 = Music::CD->new( title => 'Unknown', artistid => $mj->id );
+
+    $session->save( $unreleased1 ); # inserts
+    $session->save( $unreleased2 ); # inserts
+
+    $session->delete( $unreleased1 ); # direct delete
+
+    $mj->cds->delete( $unreleased2 ); # delete object thru the association_link
 
     my $october_album = Music::CD->new( 
         title           => 'October', 
         release_year    => DateTime->new( year => 1981 ),
         artist          => Music::Artist->new( name => 'U2' ),
     );
-    # 1-level deep, saves october and u2 in one go
+
+    # this saves october and u2 in one go, saves objects FKs 1-level deep (include artist)
+    # by default, save_deep() has unlimited traversal of the object graph of foreign keys
     $session->save_deep( $october_album, 1 );                   
 
 
-    # several ways to retrieve u2, using chained queryset filters
+#### QuerySets
 
+
+    my $all_artists = $session->objects('Music::Artist')->all;
+
+    # several ways to retrieve u2
     my $u2          = $session->objects('Music::Artist')
                               ->filter('name LIKE ?', 'U2')     # $stmt, @bind style
                               ->first;                          # returns a single object
@@ -160,7 +175,16 @@ Synopsis
                               ->all                             # returns an arrayref of objects
                               ->[0];                            # semi-unsafe, direct index
 
-    # explicit conjunctions for multiple chained filters
+    # filter by foreign key object
+    my $mj_cds = $session->objects('Music::CD')->filter({ artist => $mj })->all;
+
+    # or directly access the association_link method of an instance
+    foreach my $cd (@{$mj->cds->all}) {
+        # artist is lazily resolved (and cached) during access
+        print join(", ", $cd->artist->name, $cd->title, $cd->release_year->year), "\n";
+    }
+
+    # explicit conjunctions for multiple unambiguous chained filters
     my $mj_and_u2   = $session->objects('Music::Artist')
                               ->filter('name LIKE ?', 'Michael%')
                               ->or
@@ -168,11 +192,10 @@ Synopsis
                               ->all;
 
 
-
 Features (so far)
 -----------------
-* Basic single-table CRUD
-* Chainable DSL-like query API
+* Basic single class/table CRUD
+* Chainable DSL-like query API based on attributes
 * Support for ForeignKey with assocation (reverse) link
 * Custom ColumnHandlers for inflation/deflation of more complex objects
 
@@ -184,10 +207,10 @@ TODO / Upcoming:
 * Order-by / Group-By
 * Lazy-loaded fields
 * Joins
-* Many-To-Many
+* Many-To-Many, Cyclic References
 * Inheritance
 * Eager-loading
-* ... and probably lot more that needs to be addressed
+* ... and lot more that needs to be addressed
 
 
 Requirements

@@ -107,7 +107,10 @@ sub _get_forward_fk_method_modifier {
             my $fk_id = $ref_from_attr->get_value($o);
             my $v = $attr->get_value($o);
             if (defined($fk_id) && not(defined $v)) {
-                $fk = $o->datamapper_session->objects($ref_to_class)->get($fk_id);
+                # this is a volatile algo, since we'll depend on the 
+                my $ds = $o->datamapper_session
+                    or die "Cannot access foreignkey object for unbound object";
+                $fk = $ds->objects($ref_to_class)->get($fk_id);
                 $attr->set_value($o, $fk); # cache!
                 return $fk;
             }

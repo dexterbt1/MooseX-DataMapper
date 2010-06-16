@@ -28,7 +28,7 @@ my $msft = Company->new( name => 'Microsoft' );
 $ds->save( $msft );
 
 $msft->employees->save( Employee->new( name => 'Bill Gates' ) );
-$msft->employees->save( Employee->new( name => 'Steve Balmer' ) );
+$msft->employees->save( Employee->new( name => 'Paul Allen' ) );
 
 my $msft_employees = $msft->employees->all;
 
@@ -58,6 +58,14 @@ is scalar(@{$msft->employees->all}), 3;
 
 $msft->employees->delete( $johndoe ); # delete by object
 
+is scalar(@{$msft->employees->all}), 2;
+
+# set via foreign key's ref_from() persistent field
+my $balmer = Employee->new( name => "Steve Balmer", company_id => $msft->pk );
+
+dies_ok {
+    $balmer->company;
+} 'accessing fk in an unbound object';
 
 
 ok 1;

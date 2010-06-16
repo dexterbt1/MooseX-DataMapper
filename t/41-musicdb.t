@@ -89,11 +89,18 @@ BEGIN {
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
 $dbh->do(<<"EOT");
-    CREATE TABLE artist (artistid INTEGER PRIMARY KEY AUTOINCREMENT, artistname INTEGER)
+    CREATE TABLE artist (
+        artistid INTEGER PRIMARY KEY AUTOINCREMENT, 
+        artistname INTEGER
+    )
 EOT
 $dbh->do(<<"EOT");
-    CREATE TABLE cd (cdid INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR, year INT, 
-        artistid INTEGER REFERENCES artist (artistid))
+    CREATE TABLE cd (
+        cdid INTEGER PRIMARY KEY AUTOINCREMENT, 
+        title VARCHAR, 
+        year INT, 
+        artistid INTEGER REFERENCES artist (artistid)
+    )
 EOT
 
 # in theory, the session object should not be a concern of your domain models.
@@ -118,10 +125,16 @@ $mj->cds->save(
     Music::CD->new( title => "Bad", release_year => DateTime->new( year => 1987 ) )
 );
 
-# access all CD objects by $mj as an arrayref
-foreach my $cd (@{$mj->cds->all}) {
-    print join(", ", $cd->artist->name, $cd->title, $cd->release_year->year), "\n";
-}
+my $unreleased1 = Music::CD->new( title => 'This Is It', artist => $mj );
+my $unreleased2 = Music::CD->new( title => 'Unknown', artist => $mj );
+
+$session->save( $unreleased1 ); # inserts
+$session->save( $unreleased2 ); # inserts
+
+$session->delete( $unreleased1 ); # direct delete
+
+$mj->cds->delete( $unreleased2 ); # delete object thru the association_link
+
 
 my $october_album = Music::CD->new( 
     title           => 'October', 
@@ -131,9 +144,9 @@ my $october_album = Music::CD->new(
 # 1-level deep, saves october and u2 in one go
 $session->save_deep( $october_album, 1 );                   
 
+my $all_artists = $session->objects('Music::Artist')->all;
 
 # several ways to retrieve u2, using chained queryset filters
-
 my $u2          = $session->objects('Music::Artist')
                           ->filter('name = ?', 'U2')        # $stmt, @bind style
                           ->first;                          # returns a single object
@@ -146,6 +159,15 @@ my $u2_copy2    = $session->objects('Music::Artist')
                           ->limit(1)
                           ->all                             # returns an arrayref of objects
                           ->[0];                            # semi-unsafe, direct index
+
+# manually filter by foreign key object
+my $mj_cds = $session->objects('Music::CD')->filter({ artist => $mj })->all;
+
+# or directly access the association_link method of an instance
+foreach my $cd (@{$mj->cds->all}) {
+    # artist is lazily resolved (and cached) during access
+    print join(", ", $cd->artist->name, $cd->title, $cd->release_year->year), "\n";
+}
 
 # explicit conjunctions for multiple chained filters
 my $mj_and_u2   = $session->objects('Music::Artist')
