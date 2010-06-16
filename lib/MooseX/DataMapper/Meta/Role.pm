@@ -19,11 +19,12 @@ sub pk {
     return $self->$attr_name;
 }
 
-sub get_data_hash {
-    my ($self, $t_alias) = @_;
+sub get_sql_data_hash {
+    my ($self, $caller_session, $t_alias) = @_;
     my $metaclass = $self->meta;
     my $o = { };
     my $table_alias = $t_alias || $metaclass->table;
+    my $driver_name = $caller_session->dbh->get_info(17);
     foreach my $attr (@{$metaclass->persistent_attributes}) {
         my $attr_name = $attr->name;
         my $column = $attr->column;
@@ -34,6 +35,9 @@ sub get_data_hash {
         #my $k = $self->session->dbh->quote_identifier( $column );
         my $k = $column;
         $o->{$k} = $value;
+        if ($attr->does('WithColumnHandler')) {
+            $o->{$k} = $attr->to_db->($value, $driver_name);
+        }
     }
     return $o;
 }

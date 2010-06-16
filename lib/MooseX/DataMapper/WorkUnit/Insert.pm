@@ -11,19 +11,19 @@ has 'target' => (
     does            => 'MooseX::DataMapper::Meta::Role',
     is              => 'rw',
     required        => 1,
-    trigger         => sub {
-        my ($self, $v) = @_;
-        my $dh = $v->get_data_hash;
-        (scalar keys %$dh)
-            or croak "Nothing to insert for $v";
-    },
+#    trigger         => sub {
+#        my ($self, $v) = @_;
+#        my $dh = $v->get_sqldata_hash;
+#        (scalar keys %$dh)
+#            or croak "Nothing to insert for $v";
+#    },
 );
 
 sub execute {
     my ($self) = @_;
     my $t = $self->target;
     my $table = $t->meta->table;
-    my ($stmt, @bind) = $self->session->sqlabs->insert( $table, $t->get_data_hash );
+    my ($stmt, @bind) = $self->session->sqlabs->insert( $table, $t->get_sql_data_hash($self->session) );
     my $dbixs = $self->session->dbixs;
     #print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
     $dbixs->query( $stmt, @bind );

@@ -14,6 +14,7 @@ Features (so far)
 * Basic single-table CRUD
 * Chainable DSL-like query API
 * Support for ForeignKey with assocation (reverse) link
+* Custom ColumnHandlers for inflation/deflation of more complex objects
 
 
 TODO / Upcoming:
@@ -33,6 +34,10 @@ Requirements
 * SQL::Abstract::Limit
 * DBIx::Simple
 * DBD::SQLite
+* DateTime
+* DateTime::Format::SQLite
+* DateTime::Format::MySQL
+* DateTime::Format::Pg
 
 
 Notes

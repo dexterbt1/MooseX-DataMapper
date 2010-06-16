@@ -119,14 +119,19 @@ sub _new_object {
     my $pk_rowfield = $class->meta->primary_key->column;
     my $pk = $row->{$pk_rowfield};
     my $o;
+    my $driver_name = $self->session->dbh->get_info(17);
     {
         my $args = {};
         foreach my $col (keys %$row) {
             my $attr_name = $class->meta->column_to_attribute->{$col};
             next if (not defined $attr_name); # ignore non-member columns
+            my $attr = $class->meta->get_attribute($attr_name);
             my $row_val = $row->{$col};
             next if (not defined $row_val);
             $args->{$attr_name} = $row->{$col};
+            if ($attr->does('WithColumnHandler')) {
+                $args->{$attr_name} = $attr->from_db->( $row->{$col}, $driver_name );
+            }
         }
         $o = $class->new(%$args);
         $o->datamapper_session( $self->session );

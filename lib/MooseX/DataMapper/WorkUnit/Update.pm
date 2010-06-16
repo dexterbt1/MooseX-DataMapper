@@ -16,7 +16,7 @@ sub execute {
     my ($self) = @_;
     my $t = $self->target;
     my $table = $t->meta->table;
-    my $data = $t->get_data_hash;
+    my $data = $t->get_sql_data_hash( $self->session );
     # remove the primary key from the data hash
     my $pk_column = $t->meta->primary_key->column;
     my $where = { 

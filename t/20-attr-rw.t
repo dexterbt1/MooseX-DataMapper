@@ -10,7 +10,6 @@ BEGIN {
 }
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
-#my $dbh = DBI->connect("DBI:mysql:database=autorun:","root","", { RaiseError => 1 });
 $dbh->do(<<"EOT");
     CREATE TABLE x (id INTEGER PRIMARY KEY AUTOINCREMENT, a INTEGER, b VARCHAR(64));
 EOT
