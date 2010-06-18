@@ -1,4 +1,5 @@
-package X;
+package # hide from PAUSE
+    X;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
@@ -23,7 +24,8 @@ __PACKAGE__->meta->datamapper_class_setup(
 );
 
 
-package Point;
+package # hide from PAUSE
+    Point;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
@@ -39,7 +41,8 @@ __PACKAGE__->meta->datamapper_class_setup(
 );
 
 
-package Rect;
+package # hide from PAUSE
+    Rect;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;

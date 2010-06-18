@@ -6,8 +6,8 @@ use Test::Exception;
 BEGIN {
     use_ok 'DBI';
     use_ok 'MooseX::DataMapper';
-    require 't/Person1.pm';
 }
+require 't/lib/Person1.pm';
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
 #my $dbh = DBI->connect("DBI:mysql:database=autorun:","root","", { RaiseError => 1 });

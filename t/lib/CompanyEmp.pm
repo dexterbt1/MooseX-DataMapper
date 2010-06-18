@@ -1,4 +1,5 @@
-package Company;
+package # hide from PAUSE
+    Company;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
@@ -14,7 +15,8 @@ __PACKAGE__->meta->datamapper_class_setup(
 );
 
 
-package Employee;
+package # hide from PAUSE
+    Employee;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;

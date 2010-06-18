@@ -1,4 +1,6 @@
-package Person;
+package # hide from PAUSE
+    Person;
+
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;

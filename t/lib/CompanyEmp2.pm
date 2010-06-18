@@ -1,4 +1,5 @@
-package Company;
+package # hide from PAUSE
+    Company;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
@@ -10,7 +11,8 @@ has 'name' => (
 );
 
 
-package Employee;
+package # hide from PAUSE
+    Employee;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
@@ -36,7 +38,8 @@ has 'company' => (
     is                  => 'rw',
 );
 
-package main;
+package # hide from PAUSE
+    main;
 
 Company->meta->datamapper_class_setup( -table => 'company' );
 Employee->meta->datamapper_class_setup( -table => 'employee' );

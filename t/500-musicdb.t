@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-package Music::Artist;
+package # hide from PAUSE
+    Music::Artist;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
@@ -23,7 +24,8 @@ __PACKAGE__->meta->datamapper_class_setup(
     -primary_key        => 'id', # note, this refers to the attribute name
 );
 
-package Music::CD;
+package # hide from PAUSE
+    Music::CD;
 use Moose -traits => qw/DataMapper::Class/;
 use DateTime;
 use MooseX::DataMapper::ColumnHandlers::DateTime qw/from_year to_year/;
@@ -74,7 +76,8 @@ __PACKAGE__->meta->datamapper_class_setup(
 
 
 
-package main;
+package # hide from PAUSE
+    main;
 use strict;
 use MooseX::DataMapper;
 use Test::More qw/no_plan/;
@@ -169,7 +172,7 @@ foreach my $cd (@{$mj->cds->all}) {
     print join(", ", $cd->artist->name, $cd->title, $cd->release_year->year), "\n";
 }
 
-# explicit conjunctions for multiple chained filters
+# explicit logical operators for multiple chained filters
 my $mj_and_u2   = $session->objects('Music::Artist')
                           ->filter('name LIKE ?', 'Michael%')
                           ->or

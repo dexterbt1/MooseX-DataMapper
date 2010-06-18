@@ -10,7 +10,7 @@ BEGIN {
 }
 use MooseX::DataMapper::ColumnHandlers::DateTime qw/to_date from_date/;
 
-require 't/DateTime1.pm';
+require 't/lib/DateTime1.pm';
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
 $dbh->do(<<"EOT");

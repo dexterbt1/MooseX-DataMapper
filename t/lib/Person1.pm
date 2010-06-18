@@ -1,4 +1,5 @@
-package Person;
+package # hide from PAUSE
+    Person;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
@@ -22,7 +23,8 @@ __PACKAGE__->meta->datamapper_class_setup(
     -primary_key        => 'id',
 );
 
-package Address;
+package # hide from PAUSE
+    Address;
 use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;

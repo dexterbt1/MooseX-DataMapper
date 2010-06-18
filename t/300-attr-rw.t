@@ -6,8 +6,8 @@ use Test::Exception;
 BEGIN {
     use_ok 'DBI';
     use_ok 'MooseX::DataMapper';
-    require 't/XPointRect.pm';
 }
+require 't/lib/XPointRect.pm';
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
 $dbh->do(<<"EOT");
