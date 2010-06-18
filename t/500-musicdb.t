@@ -94,7 +94,7 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
 $dbh->do(<<"EOT");
     CREATE TABLE artist (
         artistid INTEGER PRIMARY KEY AUTOINCREMENT, 
-        artistname INTEGER
+        artistname VARCHAR
     )
 EOT
 $dbh->do(<<"EOT");

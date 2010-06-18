@@ -130,16 +130,25 @@ sub _get_forward_fk_method_modifier {
 }
 
 
-sub _add_persistent_attribute {
-    my ($self, $attr) = @_;
-    my $metaclass = $self;
-    push @{$metaclass->persistent_attributes}, $attr;
-    if (not defined $attr->column) {
-        $attr->column( $attr->name ); # use the attribute name as the default column name
-    }
-    $metaclass->attribute_to_column->{$attr->name} = $attr->column;
-    $metaclass->column_to_attribute->{$attr->column} = $attr->name;
+sub map_attr_column {
+    my ($self, $attr_name, $column_spec) = @_;
+    my $attr = $self->get_attribute($attr_name)
+        or croak "Unable to remap invalid attribute ($attr_name)";
+    ($attr->does('Persistent'))
+        or croak "Cannot remap non-persistent attribute ($attr_name)";
+    (not exists $self->column_to_attribute->{$column_spec})
+        or croak "Cannot remap, duplicate column";
+    my $old_column = $attr->column || '';
+    delete $self->attribute_to_column->{$attr_name};
+    delete $self->column_to_attribute->{$old_column};
+    $attr->column( $column_spec );
+    $self->attribute_to_column->{$attr->name} = $attr->column;
+    $self->column_to_attribute->{$attr->column} = $attr->name;
+    $self->persistent_attributes( 
+        [ map { $self->get_attribute($_) } values %{$self->column_to_attribute} ] 
+    );
 }
+
 
 
 sub datamapper_class_setup {
@@ -156,10 +165,10 @@ sub datamapper_class_setup {
     
     # --- do setup
     foreach my $attr ($metaclass->get_all_attributes) {
-        if ($attr->does('MooseX::DataMapper::Meta::Attribute::Trait::Persistent')) {
-            $self->_add_persistent_attribute($attr);
+        if ($attr->does('Persistent')) {
+            $self->map_attr_column($attr->name, $attr->column || $attr->name);
         }
-        elsif ($attr->does('MooseX::DataMapper::Meta::Attribute::Trait::ForeignKey')) {
+        elsif ($attr->does('ForeignKey')) {
             push @{$metaclass->foreignkey_attributes}, $attr;
             $attr->init_ref_to;
 
@@ -179,7 +188,7 @@ sub datamapper_class_setup {
                         is                  => 'rw',
                     },
                 );
-                $self->_add_persistent_attribute($x);
+                $self->map_attr_column($name, $name);
                 $attr->ref_from($name);
             }
             my $ref_from = $attr->ref_from;
