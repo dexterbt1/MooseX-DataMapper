@@ -3,7 +3,7 @@ use strict;
 use Moose;
 use MooseX::DataMapper;
 use MooseX::DataMapper::QuerySet::Filter;
-use MooseX::DataMapper::QuerySet::Conjunction;
+use MooseX::DataMapper::QuerySet::LogicalOperator;
 use Carp;
 use Scalar::Util qw/blessed/;
 
@@ -53,7 +53,7 @@ has 'static_filters' => (
 );
 
 has 'filters' => (
-    isa             => 'ArrayRef[MooseX::DataMapper::QuerySet::Filter|MooseX::DataMapper::QuerySet::Conjunction]',
+    isa             => 'ArrayRef[MooseX::DataMapper::QuerySet::Filter|MooseX::DataMapper::QuerySet::LogicalOperator]',
     is              => 'rw',
     lazy            => 1,
     default         => sub { [] },
@@ -91,7 +91,7 @@ sub _get_resultset {
     }
     foreach my $item (@{$self->filters}) {
         
-        if ($item->isa('MooseX::DataMapper::QuerySet::Conjunction')) {
+        if ($item->isa('MooseX::DataMapper::QuerySet::LogicalOperator')) {
             $where_stmt .= ' '.$item->term.' ';
             next;
         }
@@ -139,15 +139,15 @@ sub _new_object {
 }
 
 
-sub _apply_conjunction {
+sub _apply_logical_operator {
     my ($self, $term) = @_;
     my $len = scalar @{$self->filters};
     ($len > 0)
-        or croak "Conjunction cannot be applied to an empty QuerySet";
+        or croak "Logical operator cannot be applied to an empty QuerySet";
     my $head = $self->filters->[-1];
     ($head->isa('MooseX::DataMapper::QuerySet::Filter'))
-        or croak "QuerySet Conjunction should only be applied after a Filter";
-    push @{$self->filters}, MooseX::DataMapper::QuerySet::Conjunction->new( term => $term );
+        or croak "QuerySet logical operator should only be applied after a Filter";
+    push @{$self->filters}, MooseX::DataMapper::QuerySet::LogicalOperator->new( term => $term );
 }
 
 
@@ -196,14 +196,14 @@ sub filter {
 
 sub or {
     my ($self) = @_;
-    $self->_apply_conjunction( 'OR' );
+    $self->_apply_logical_operator( 'OR' );
     return $self;
 }
 
 
 sub and {
     my ($self) = @_;
-    $self->_apply_conjunction( 'AND' );
+    $self->_apply_logical_operator( 'AND' );
     return $self;
 }
 

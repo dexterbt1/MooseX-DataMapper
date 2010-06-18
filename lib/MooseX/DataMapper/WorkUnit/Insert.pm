@@ -11,12 +11,6 @@ has 'target' => (
     does            => 'MooseX::DataMapper::Meta::Role',
     is              => 'rw',
     required        => 1,
-#    trigger         => sub {
-#        my ($self, $v) = @_;
-#        my $dh = $v->get_sqldata_hash;
-#        (scalar keys %$dh)
-#            or croak "Nothing to insert for $v";
-#    },
 );
 
 sub execute {

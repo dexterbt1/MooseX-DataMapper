@@ -184,7 +184,7 @@ Overview
         print join(", ", $cd->artist->name, $cd->title, $cd->release_year->year), "\n";
     }
 
-    # explicit conjunctions for multiple unambiguous chained filters
+    # explicit logical operators for multiple unambiguous chained filters
     my $mj_and_u2   = $session->objects('Music::Artist')
                               ->filter('name LIKE ?', 'Michael%')
                               ->or
