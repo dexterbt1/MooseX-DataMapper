@@ -87,15 +87,32 @@ sub save_deep {
 sub save_one {
     my ($self, $i) = @_;
     eval {
-        if (defined $i->pk) {
-            ($i->datamapper_session == $self)
-                or croak "Cannot save a session-bound object into a different session";
-            # update
-            MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
+        my $pk = $i->pk;
+        if (defined($pk) && ref($pk) eq 'HASH') {
+            # composite key handling, ... this probably belong to somewhere else
+            if (defined $i->datamapper_session) {
+                ($i->datamapper_session == $self)
+                    or croak "Cannot save a session-bound object into a different session";
+                # update
+                MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
+            }
+            else {
+                # not pk yet, insert
+                MooseX::DataMapper::WorkUnit::Insert->new( session => $self, target => $i )->execute;
+            }
         }
         else {
-            # not pk yet, insert
-            MooseX::DataMapper::WorkUnit::Insert->new( session => $self, target => $i )->execute;
+            # non composite key handling
+            if (defined $i->datamapper_session) {
+                ($i->datamapper_session == $self) # assert equal session
+                    or croak "Cannot save an already session-bound object into a different session";
+                # update
+                MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
+            }
+            else {
+                # not pk yet, insert
+                MooseX::DataMapper::WorkUnit::Insert->new( session => $self, target => $i )->execute;
+            }
         }
     };
     if ($@) { croak $@; }

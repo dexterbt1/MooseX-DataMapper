@@ -9,6 +9,7 @@ my $builder = Module::Build->new(
     dist_version_from   => 'lib/MooseX/DataMapper.pm',
     build_requires => {
         'Test::More'                    => 0,
+        'Test::Exception'               => 0,
         'Moose'                         => 0,
         'SQL::Abstract'                 => 0,
         'SQL::Abstract::Limit'          => 0,

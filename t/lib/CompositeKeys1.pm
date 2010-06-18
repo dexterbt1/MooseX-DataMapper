@@ -3,12 +3,6 @@ package # hide from PAUSE
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
 
-has 'id' => (
-    traits      => [qw/Persistent/],
-    isa         => 'Int',
-    is          => 'rw',
-);
-
 has 'a' => (
     traits      => [qw/Persistent/],
     isa         => 'Int',
@@ -30,7 +24,7 @@ has 'c' => (
 
 __PACKAGE__->meta->datamapper_class_setup(
     -table          => 'x',
-    -primary_key    => 'id',
+    -primary_key    => [ 'a', 'b' ],
 );
 
 1;

@@ -23,8 +23,13 @@ sub execute {
             my $dbixs = $self->session->dbixs;
             $dbixs->query( $stmt, @bind );
             # automatically assign the primary key field with the last insert id
-            my $pk_field = $t->meta->primary_key->name;
-            $t->$pk_field( $dbixs->last_insert_id(undef, undef, $table, undef) );
+            my $pk_spec = $t->meta->primary_key;
+            if (ref($pk_spec) eq 'ARRAY') {
+                # nop, do nothing
+            }
+            else {
+                $pk_spec->set_value( $t, $dbixs->last_insert_id(undef, undef, $table, undef) );
+            }
             $t->datamapper_session( $self->session );
             $self->session->query_log_append( [ $stmt, @bind ] );
         }

@@ -1,3 +1,4 @@
+use strict;
 package MooseX::DataMapper::Meta::Class::Trait::DataMapper::Class;
 use Moose::Role;
 use MooseX::DataMapper::Meta::Role;
@@ -6,7 +7,7 @@ use Carp;
 
 has 'primary_key' => (
     is              => 'rw',
-    does            => 'MooseX::DataMapper::Meta::Attribute::Trait::Persistent',
+    does            => 'MooseX::DataMapper::Meta::Attribute::Trait::Persistent|ArrayRef[MooseX::DataMapper::Meta::Attribute::Trait::Persistent]',
 );
 
 has 'table' => (
@@ -55,7 +56,7 @@ sub _add_auto_pk {
             is                  => 'rw',
         },
     );
-    $self->primary_key( $auto_pk );
+    $self->map_primary_key( $auto_pk->name );
 }
 
 
@@ -150,6 +151,29 @@ sub map_attr_column {
 }
 
 
+sub map_primary_key {
+    my ($self, $spec) = @_;
+    (defined $spec)
+        or croak "Undefined primary key spec";
+    my $out;
+    if (defined($spec) && ref($spec) eq 'ARRAY') {
+        my @new_spec = ();
+        foreach my $attr_name (@$spec) {
+            ($self->has_attribute($attr_name))
+                or croak "Unable to resolve attribute $spec";
+            my $attr = $self->get_attribute($attr_name);
+            push @new_spec, $attr;
+        }
+        $out = \@new_spec;
+    }
+    else {
+        ($self->has_attribute($spec))
+            or croak "Unable to resolve attribute $spec";
+        $out = $self->get_attribute($spec);
+    }
+    $self->primary_key( $out );
+}
+
 
 sub datamapper_class_setup {
     my ($self, %p) = @_;
@@ -157,7 +181,7 @@ sub datamapper_class_setup {
     # handle setup params
     if (exists $p{-table}) { $metaclass->table($p{-table}); }
     if (exists $p{-primary_key}) { 
-        $metaclass->primary_key( $metaclass->get_attribute( $p{-primary_key} ) ) 
+        $self->map_primary_key( $p{-primary_key} );
     }
     else {
         $self->_add_auto_pk;

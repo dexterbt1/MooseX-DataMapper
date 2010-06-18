@@ -22,12 +22,17 @@ sub get_tuples {
     my $table = $table_spec; # assume table spec as a single table, plain string
     my $driver_name = $datamapper_session->dbh->get_info(17);
     my $metaclass = $i->meta;
+    my $pk_spec = $metaclass->primary_key;
+    my $has_composite_pk = (ref($pk_spec) eq 'ARRAY');
     my $o = { };
     foreach my $attr (@{$metaclass->persistent_attributes}) {
         my $column = $attr->column;
         my $value = $attr->get_value($i);
-        if ( ($metaclass->primary_key->name eq $attr->name) and (not defined $value) ) {
-            next; # skip undefined primary keys
+        # for composite keys, expect
+        if (not $has_composite_pk) {
+            if ( ($metaclass->primary_key->name eq $attr->name) and (not defined $value) ) {
+                next; # skip undefined primary keys, for single-column keys
+            }
         }
         my $k = $column;
         $o->{$k} = $value;
