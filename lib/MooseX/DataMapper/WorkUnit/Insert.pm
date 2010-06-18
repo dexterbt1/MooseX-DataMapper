@@ -16,17 +16,19 @@ has 'target' => (
 sub execute {
     my ($self) = @_;
     my $t = $self->target;
-    my $table = $t->meta->table;
-    my ($stmt, @bind) = $self->session->sqlabs->insert( $table, $t->get_sql_data_hash($self->session) );
-    my $dbixs = $self->session->dbixs;
-    #print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
-    $dbixs->query( $stmt, @bind );
-    # automatically assign the primary key field with the last insert id
-    my $pk_field = $t->meta->primary_key->name;
-    $t->$pk_field( $dbixs->last_insert_id(undef, undef, $table, undef) );
-    $t->datamapper_session( $self->session );
-    #print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
-    $self->session->query_log_append( [ $stmt, @bind ] );
+    my $tuples = $t->meta->get_tuples( $t, $self->session, $t->meta->table );
+    foreach my $table (keys %$tuples) {
+        foreach my $row (@{$tuples->{$table}}) {
+            my ($stmt, @bind) = $self->session->sqlabs->insert( $table, $row );
+            my $dbixs = $self->session->dbixs;
+            $dbixs->query( $stmt, @bind );
+            # automatically assign the primary key field with the last insert id
+            my $pk_field = $t->meta->primary_key->name;
+            $t->$pk_field( $dbixs->last_insert_id(undef, undef, $table, undef) );
+            $t->datamapper_session( $self->session );
+            $self->session->query_log_append( [ $stmt, @bind ] );
+        }
+    }
 }
 
 1;

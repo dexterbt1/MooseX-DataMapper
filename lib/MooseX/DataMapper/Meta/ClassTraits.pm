@@ -1,6 +1,7 @@
 package MooseX::DataMapper::Meta::Class::Trait::DataMapper::Class;
 use Moose::Role;
 use MooseX::DataMapper::Meta::Role;
+use MooseX::DataMapper::Meta::TupleBuilder;
 use Carp;
 
 has 'primary_key' => (
@@ -11,6 +12,13 @@ has 'primary_key' => (
 has 'table' => (
     isa             => 'Str',
     is              => 'rw',
+);
+
+has 'tuple_builder_class' => (
+    isa             => 'Str',
+    is              => 'rw',
+    lazy            => 1,
+    default         => 'MooseX::DataMapper::Meta::TupleBuilder::ClassToSingleTable',
 );
 
 has 'persistent_attributes' => (
@@ -137,6 +145,7 @@ sub _add_persistent_attribute {
 sub datamapper_class_setup {
     my ($self, %p) = @_;
     my $metaclass = $self;
+    # handle setup params
     if (exists $p{-table}) { $metaclass->table($p{-table}); }
     if (exists $p{-primary_key}) { 
         $metaclass->primary_key( $metaclass->get_attribute( $p{-primary_key} ) ) 
@@ -144,6 +153,8 @@ sub datamapper_class_setup {
     else {
         $self->_add_auto_pk;
     }
+    
+    # --- do setup
     foreach my $attr ($metaclass->get_all_attributes) {
         if ($attr->does('MooseX::DataMapper::Meta::Attribute::Trait::Persistent')) {
             $self->_add_persistent_attribute($attr);
@@ -194,6 +205,7 @@ sub datamapper_class_setup {
             $ref_to_class->meta->add_method( $attr->association_link, $self->_get_reverse_fk_method( $args ) );
         }
     }
+    $self->tuple_builder_class->meta->apply($metaclass->meta);
     MooseX::DataMapper::Meta::Role->meta->apply($metaclass);
 }
 

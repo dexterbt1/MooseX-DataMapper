@@ -15,18 +15,28 @@ has 'target' => (
 sub execute {
     my ($self) = @_;
     my $t = $self->target;
-    my $table = $t->meta->table;
-    my $data = $t->get_sql_data_hash( $self->session );
-    # remove the primary key from the data hash
-    my $pk_column = $t->meta->primary_key->column;
-    my $where = { 
-        $pk_column => delete($data->{$pk_column}),
-    };
-    my ($stmt, @bind) = $self->session->sqlabs->update( $table, $data, $where );
-    my $dbixs = $self->session->dbixs;
-    $dbixs->query( $stmt, @bind );
-    #print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
-    $self->session->query_log_append( [ $stmt, @bind ] );
+    my $tuples = $t->meta->get_tuples( $t, $self->session, $t->meta->table );
+    foreach my $table (keys %$tuples) {
+        foreach my $row (@{$tuples->{$table}}) {
+            # remove the primary key from the data hash
+            my $pk_column_spec = $t->meta->primary_key->column;
+            my $where = { };
+            if (ref($pk_column_spec) eq 'ARRAY') {
+                foreach my $pk_col (@$pk_column_spec) {
+                    # for now, assume column_spec is an array of strings (column names)
+                    $where->{$pk_col} = delete($row->{$pk_col});
+                }
+            }
+            else {
+                # expect $pk_column_spec as a plain string referring to a single column
+                $where->{$pk_column_spec} = delete($row->{$pk_column_spec});
+            };
+            my ($stmt, @bind) = $self->session->sqlabs->update( $table, $row, $where );
+            my $dbixs = $self->session->dbixs;
+            $dbixs->query( $stmt, @bind );
+            $self->session->query_log_append( [ $stmt, @bind ] );
+        }
+    }
 }
 
 1;
