@@ -5,7 +5,7 @@ use Moose;
 use DBIx::Simple;
 use Data::Dumper;
 use SQL::Abstract::Limit;
-use Scalar::Util qw/weaken/;
+use Scalar::Util qw/weaken blessed/;
 use Carp;
 
 use MooseX::DataMapper::Meta;
@@ -52,12 +52,6 @@ has 'queries' => (
     default         => sub { [] },
 );
 
-has 'work_unflushed' => (
-    isa             => 'ArrayRef[MooseX::DataMapper::WorkUnit]',
-    is              => 'rw',
-    default         => sub { [] },
-);
-
 
 sub save {
     my ($self, $i, $depth) = @_;
@@ -66,7 +60,6 @@ sub save {
         $self->save_deep($i, $depth);
     };
     if ($@) { croak $@; }
-    $self->flush;
     return $i;
 }
 
@@ -126,14 +119,6 @@ sub delete_one {
 }
 
 
-sub flush {
-    # FIXME: this is remnant code when we use to have queued unit of work and identity-map
-    #my ($self) = @_;
-    #while (my $work = shift @{$self->work_unflushed}) {
-    #    $work->execute;
-    #}
-}
-
 sub objects {
     my ($self, @class_spec) = @_;
     return MooseX::DataMapper::QuerySet->new( session => $self, class_spec => \@class_spec );
@@ -149,15 +134,7 @@ sub query_log_append {
 }
 
 
-sub enqueue_work {
-    my ($self, $work) = @_;
-    push @{$self->work_unflushed}, $work;
-}
-
-
 sub DEMOLISH {
-    my ($self) = @_;
-    $self->flush;
 }
 
 

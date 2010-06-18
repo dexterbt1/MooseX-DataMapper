@@ -15,8 +15,8 @@ sub datamapper_session {
 
 sub pk {
     my $self = shift @_;
-    my $attr_name = $self->meta->primary_key->name;
-    return $self->$attr_name;
+    my $pk_attr = $self->meta->primary_key;
+    return $pk_attr->get_value($self);
 }
 
 sub get_sql_data_hash {

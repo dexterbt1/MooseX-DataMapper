@@ -42,6 +42,12 @@ isa_ok $o, 'X';
 is $o->a, 1;
 is $o->get_b, "Hello World";
 
+$o = $ds->objects($o)->filter('a = ?', 1)->first; # class vs instance should still work
+
+isa_ok $o, 'X';
+is $o->a, 1;
+is $o->get_b, "Hello World";
+
 # =================== 
 
 my ($p, $r);

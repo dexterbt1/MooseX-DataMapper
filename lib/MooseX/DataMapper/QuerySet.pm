@@ -72,7 +72,6 @@ sub _get_columns {
 sub _get_resultset {
     my ($self) = @_;
     my $ds = $self->session;
-    $ds->flush;
     my $class = $self->class_spec->[0]; # support single table for now
     my $table = $class->meta->table;
     my $dbixs = $ds->dbixs;
