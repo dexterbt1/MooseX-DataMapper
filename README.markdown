@@ -34,8 +34,8 @@ Overview
     );
 
     __PACKAGE__->meta->datamapper_class_setup( 
-        -table              => 'artists',       # default table
-        -primary_key        => 'id',            # note, this refers to the attribute name
+        -table              => 'artists',   # default table
+        -primary_key        => 'id',        # note, refers to attribute name
     );
 
     package Music::CD;
@@ -43,14 +43,7 @@ Overview
     use DateTime;
     use MooseX::DataMapper::ColumnHandlers::DateTime qw/from_year to_year/;
 
-    # shown here, if an attribute's column is omitted,
-    #   then by default, column name = attribute name 
-
-    has 'cdid' => ( 
-        traits              => [qw/Persistent/],
-        isa                 => 'Int',
-        is                  => 'rw',
-    );
+    # if an attribute's column is omitted, then column name = attribute name 
 
     has 'title' => (
         traits              => [qw/Persistent/],
@@ -84,7 +77,7 @@ Overview
 
     __PACKAGE__->meta->datamapper_class_setup(
         -table              => 'cd',
-        -primary_key        => 'cdid',
+        -auto_pk            => 1,   # generates an serial/auto-increment pk called 'id'
     );
 
 
@@ -100,10 +93,10 @@ Overview
 
     # create the tables for the demo
     my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
-    $dbh->do(q{ CREATE TABLE artist (artistid INTEGER PRIMARY KEY AUTOINCREMENT, artistname INTEGER) })
+    $dbh->do(q{ CREATE TABLE artist (artistid INTEGER PRIMARY KEY AUTOINCREMENT, artistname INTEGER) });
     $dbh->do(q{ CREATE TABLE cd (cdid INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR, year INT, 
                     artistid INTEGER REFERENCES artist (artistid))
-    })
+    });
 
     # in theory, the session object should not be a concern of your domain models.
     my $session = MooseX::DataMapper->connect($dbh);
@@ -196,8 +189,8 @@ Features (so far)
 -----------------
 * Basic single class/table CRUD
 * Chainable DSL-like query API based on attributes
+* Support for Primary Key types: Serial, Natural and Composite
 * Support for ForeignKey with assocation (reverse) link
-* Support for Composite Primary Keys
 * Custom ColumnHandlers for inflation/deflation of more complex objects (VO)
 
 
@@ -219,31 +212,31 @@ Comparison with similar modules
 -------------------------------
 
 #### General
-    * Your Moose-class is your schema. 
-    * Your schema is usable over multiple sessions (connections).
+    * Your Moose-class contains the "schema".
+    * Your "schema" is usable over multiple sessions (connections).
     * You map your classes to tables, attributes to columns.
     * You map keys to attributes
     * DM aims to provide sensible defaults when mapping, and allow overrides if necessary.
     * Use your class names and attribute names when querying.
         * In your logic, worry less about the actual database identifiers (table names, columns)
-        * Switch mappings of tables / columns / keys without changing class and existing queries.
+        * Switch mappings of tables / columns / keys without changing classes and existing queries.
     * Two flavors of query expressions
         * SQL::Abstract - which many ORMs support already
         * ($stmt, @bind) - IMO is more flexible, albeit allows one to write RDBMS specific expressions.
 #### DBIx::Class
-    * DM tries to play well with Moose-based classes.
+    * DM tries to play well with Moose-based classes especially existing ones.
     * DM should allow you to keep (re)using your TypeConstraints, Accessors, Modifiers, etc.
     * DM should allow for less integration code, less verbose mapping/class declarations.
 #### Fey::ORM
     * Fey::ORM tries to map tables to classes, DM maps classes to tables.
-    * Workflow: Fey::ORM tries to create attributes based on your table columns, 
+    * Fey::ORM tries to create attributes based on your table columns, 
         while with DM, you write your attributes and then map them to table columns.
     * DM, by implementation, uses string-manipulation to generate SQL (for now).
-         Fey::ORM uses Fey, which is a different approach to SQL generation.
+        Fey::ORM uses Fey, which is a different approach to SQL generation.
 #### KiokuDB
-    * KiokuDB is an object persistence solution, not an object-relational mapper.
-    * KiokuDB can be an attractive solution if you'd simple want to persist your Moose object graph 
-        and your use-case does not require you to map classes <=> tables, attributes <=> columns.
+    * KiokuDB is an object-graph persistence solution, not an object-relational mapper.
+    * KiokuDB can be an attractive solution if you simply want to persist your Moose object graph 
+        and your use-case does not require you to RDBMS mapping of classes <=> tables, attributes <=> columns.
 
 
 Requirements
@@ -265,9 +258,9 @@ Notes
 
 Why yet another ORM? This project stemmed from getting tired of all my duplicated mapping code when I try to marry Moose and DBIx::DataModel. Moose metaclass programming is indeed very powerful, that with it, I simply tried to hack away this code in my few days of vacation time. This will certainly be useful me and I hope others will find it useful as well.
 
-This project aims to be a clean and practical object-relational persistence solution. I acknowledge that we are standing on the shoulders of giants. Concepts and API were inspired by Django's ORM and DBIx::DataModel. Internally, we are using SQL::Abstract and DBIx::Simple as helpers. For now, we are using string-substitution as the strategy for SQL generation. 
+This project aims to be a clean and practical object-relational persistence solution. It is by no means the single solution for every ORM problem, nor replaces mature and feature-rich ORMs (like DBIx::Class). What it offers is a simple declarative layer for persisting/querying your mapped Moose objects. I acknowledge that we are standing on the shoulders of giants. 
 
-It also does not implement Martin Fowler's DataMapper pattern (P of EAA). Data::CapabilityBased seems to be next evolution towards a true DataMapper. We are not implementing the Identity-Map or Unit-of-Work patterns either.
+Concepts and API were inspired by Django's ORM and DBIx::DataModel. It also does not implement Martin Fowler's DataMapper pattern (P of EAA). Data::CapabilityBased seems to be next step towards a true DataMapper. We are not implementing the Identity-Map or Unit-of-Work patterns either.
 
 The current implementation is not yet perldoc documented (given the unstable API state). The tests will act as executable docs for now. See `t/*.t` and `t/*.pm` files for the mean time.
 

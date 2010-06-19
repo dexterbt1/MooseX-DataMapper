@@ -26,8 +26,9 @@ has 'c' => (
 
 
 __PACKAGE__->meta->datamapper_class_setup(
-    -table          => 'x',
-    -primary_key    => [ 'a', 'b' ],
+    -table              => 'x',
+    -primary_key_type   => 'Composite',
+    -primary_key        => [ 'a', 'b' ],
 );
 
 1;

@@ -20,12 +20,12 @@ sub execute {
     my $pk_spec = $t->meta->primary_key;
     my $where = $pk_spec->get_column_condition( $t );
     my ($stmt, @bind) = $self->session->sqlabs->delete( $table, $where );
+    $self->session->query_log_append( [ $stmt, @bind ] );
     $self->session->dbixs->query( $stmt, @bind );
     if ($pk_spec->is_serial) {
         $pk_spec->clear_serial($t); 
     }
     $t->datamapper_session( undef );
-    $self->session->query_log_append( [ $stmt, @bind ] );
 }
 
 1;

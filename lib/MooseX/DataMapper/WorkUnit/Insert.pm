@@ -22,13 +22,13 @@ sub execute {
         foreach my $row (@{$tuples->{$table}}) {
             my ($stmt, @bind) = $self->session->sqlabs->insert( $table, $row );
             my $dbixs = $self->session->dbixs;
-            $dbixs->query( $stmt, @bind );
+            $self->session->query_log_append( [ $stmt, @bind ] ); # log just before query
+            my $rs = $dbixs->query( $stmt, @bind );
             # automatically assign the primary key field with the last insert id
             if ($pk_spec->is_serial) {
                 $pk_spec->set_serial( $t, $dbixs->last_insert_id(undef, undef, $table, undef) );
             }
             $t->datamapper_session( $self->session );
-            $self->session->query_log_append( [ $stmt, @bind ] );
         }
     }
 }

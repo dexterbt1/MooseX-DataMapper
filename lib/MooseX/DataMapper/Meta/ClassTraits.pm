@@ -2,6 +2,7 @@ use strict;
 package MooseX::DataMapper::Meta::Class::Trait::DataMapper::Class;
 use Moose::Role;
 use MooseX::DataMapper::PK::Serial;
+use MooseX::DataMapper::PK::Natural;
 use MooseX::DataMapper::PK::Composite;
 use MooseX::DataMapper::Meta::Role;
 use MooseX::DataMapper::Meta::TupleBuilder;
@@ -49,16 +50,16 @@ has 'column_to_attribute' => (
 );
 
 sub _add_auto_pk {
-    my ($self) = @_;
+    my ($self, $name) = @_;
     my $auto_pk = $self->add_attribute(
-        id => {
+        $name => {
             traits              => [qw/Persistent/],
-            column              => 'id',
+            column              => $name,
             isa                 => 'Int',
             is                  => 'rw',
         },
     );
-    $self->map_primary_key( $auto_pk->name );
+    $self->map_primary_key( $name, 'Serial' );
 }
 
 
@@ -154,7 +155,7 @@ sub map_attr_column {
 
 
 sub map_primary_key {
-    my ($self, $spec) = @_;
+    my ($self, $spec, $pk_type) = @_;
     (defined $spec)
         or croak "Undefined primary key spec";
     my $out;
@@ -172,9 +173,9 @@ sub map_primary_key {
         $out = MooseX::DataMapper::PK::Composite->new( attrs => \@new_spec );
     }
     else {
-        ($self->has_attribute($spec))
-            or croak "Unable to resolve attribute $spec";
-        $out = MooseX::DataMapper::PK::Serial->new( attr => $self->get_attribute($spec) );
+        my $class_prefix = 'MooseX::DataMapper::PK';
+        my $pk_class = join('::', $class_prefix, $pk_type || 'Serial' );
+        $out = $pk_class->new( $self, $spec );
     }
     $self->primary_key( $out );
 }
@@ -186,10 +187,10 @@ sub datamapper_class_setup {
     # handle setup params
     if (exists $p{-table}) { $metaclass->table($p{-table}); }
     if (exists $p{-primary_key}) { 
-        $self->map_primary_key( $p{-primary_key} );
+        $self->map_primary_key( $p{-primary_key}, $p{-primary_key_type} );
     }
-    else {
-        $self->_add_auto_pk;
+    elsif (exists $p{-auto_pk}) {
+        $self->_add_auto_pk( $p{-auto_pk} );
     }
     
     # --- do setup
@@ -239,12 +240,16 @@ sub datamapper_class_setup {
                 ref_to_attr_name    => $ref_to_attr_name,
                 ref_to_class        => $ref_to_class,
             };
+            # FIXME: should method be the $attr->accessor? more tests on this later
             $metaclass->add_around_method_modifier( $attr->name, $self->_get_forward_fk_method_modifier( $args ) );
             $ref_to_class->meta->add_method( $attr->association_link, $self->_get_reverse_fk_method( $args ) );
         }
     }
     $self->tuple_builder_class->meta->apply($metaclass->meta);
     MooseX::DataMapper::Meta::Role->meta->apply($metaclass);
+    if (not $self->primary_key) {
+        croak "No Primary Key specified. Perhaps you forgot -primary_key or -auto_pk ?";
+    }
 }
 
 

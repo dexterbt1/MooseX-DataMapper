@@ -65,20 +65,19 @@ sub get_instance_value {
         $out->{$key} = $val;
     }
     return $out;
-#    if (ref($pk_spec) eq 'ARRAY') {
-#        my $out = { };
-#        foreach my $pk_attr (@$pk_spec) {
-#            my $val = $pk_attr->get_value($self);
-#            if (not defined $val) {
-#                undef $out;
-#                last;
-#            }
-#            $out->{$pk_attr->name} = $val;
-#        }
-#        return $out;
-#    }
-#    return $pk_spec->get_value($self);
 }
+
+
+# no dirty management needed
+
+sub is_dirty { 0 }
+
+sub cleanup_dirty { 1 }
+
+sub get_dirty_columns {
+    return { }; # none
+}
+
 
 1;
 

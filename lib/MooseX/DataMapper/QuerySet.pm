@@ -101,13 +101,13 @@ sub _get_resultset {
     }
     my ($select_stmt) = $ds->sqlabs->select( $table, $self->_get_columns, $where_stmt, undef, $self->sql_limit, $self->sql_offset );
     my $rs;
+    $ds->query_log_append( [ $select_stmt, \@where_bind ] );
     eval {
         $rs = $dbixs->query($select_stmt, @where_bind);
     };
     if ($@) {
         croak "Failed SQL statement:\n\t$select_stmt\n\t".join("\n\t",@where_bind)."\n";
     }
-    $ds->query_log_append( [ $select_stmt, \@where_bind ] );
     return $rs;
 }
 
@@ -115,6 +115,8 @@ sub _get_resultset {
 sub _new_object {
     # FIXME: refactor this to belong to some other class like an ObjectBuilder or something
     my ($self, $class, $row) = @_;
+    # FIXME: caller methods, those returning objects should throw an Exception undef row scenario, e.g. DoesNotExist exception
+    return if (not(defined $row));
     #my $pk_spec = $class->meta->primary_key;
     #my %pk_name_to_attr = (); # maps pk_attr_name1 => pk_attr
     #if (ref($pk_spec) eq 'ARRAY') {

@@ -1,5 +1,6 @@
 package MooseX::DataMapper::PK::Serial;
 use Moose;
+use Carp;
 use Scalar::Util qw/blessed/;
 with 'MooseX::DataMapper::PK';
 
@@ -9,6 +10,14 @@ has 'attr' => (
     is          => 'rw',
     required    => 1,
 );
+
+
+sub BUILDARGS {
+    my ($self, $source_meta, $spec) = @_;
+    ($source_meta->has_attribute($spec))
+        or croak "Unable to resolve attribute $spec";
+    return { attr => $source_meta->get_attribute($spec) };
+}
 
 sub is_serial { 1 }
 
@@ -35,20 +44,18 @@ sub get_column_condition {
 sub get_instance_value {
     my ($self, $instance) = @_;
     return $self->attr->get_value( $instance );
-#    if (ref($pk_spec) eq 'ARRAY') {
-#        my $out = { };
-#        foreach my $pk_attr (@$pk_spec) {
-#            my $val = $pk_attr->get_value($self);
-#            if (not defined $val) {
-#                undef $out;
-#                last;
-#            }
-#            $out->{$pk_attr->name} = $val;
-#        }
-#        return $out;
-#    }
-#    return $pk_spec->get_value($self);
 }
+
+# no dirty management needed
+
+sub is_dirty { 0 }
+
+sub cleanup_dirty { 1 }
+
+sub get_dirty_columns {
+    return { }; # none
+}
+
 
 1;
 

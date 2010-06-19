@@ -21,6 +21,7 @@ has 'b' => (
 
 __PACKAGE__->meta->datamapper_class_setup(
     -table              => 'x',
+    -auto_pk            => 'id',
 );
 
 
@@ -38,6 +39,7 @@ has ['x', 'y'] => (
 
 __PACKAGE__->meta->datamapper_class_setup(
     -table              => 'point',
+    -auto_pk            => 'id',
 );
 
 
@@ -73,6 +75,7 @@ has 'point' => (
 
 __PACKAGE__->meta->datamapper_class_setup(
     -table              => 'rect',
+    -auto_pk            => 'id',
 );
 
 

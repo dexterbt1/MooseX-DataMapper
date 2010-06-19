@@ -29,8 +29,6 @@ use strict;
 use MooseX::DataMapper;
 use Moose -traits => qw/DataMapper::Class/;
 
-# implicit primary key id is generated here
-
 has 'city' => (
     traits              => [qw/Persistent/],
     column              => 'city',
@@ -55,6 +53,7 @@ has 'person' => (
 
 __PACKAGE__->meta->datamapper_class_setup(
     -table              => 'address',
+    -auto_pk            => 'id',
 );
 
 

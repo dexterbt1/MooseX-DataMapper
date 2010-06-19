@@ -12,6 +12,7 @@ has 'name' => (
 
 __PACKAGE__->meta->datamapper_class_setup(
     -table              => 'company',
+    -auto_pk            => 'id',
 );
 
 
@@ -37,6 +38,7 @@ has 'company' => (
 
 __PACKAGE__->meta->datamapper_class_setup(
     -table              => 'employee',
+    -auto_pk            => 'id',
 );
 
 

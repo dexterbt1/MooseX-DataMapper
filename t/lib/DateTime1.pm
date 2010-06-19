@@ -34,7 +34,8 @@ has 'birth_date_copy' => (
 );
 
 __PACKAGE__->meta->datamapper_class_setup(
-    -table => 'person',
+    -table          => 'person',
+    -auto_pk        => 'id',
 );
 
 1;
