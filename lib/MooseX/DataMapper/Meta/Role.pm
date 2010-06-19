@@ -24,6 +24,7 @@ sub pk {
 
 sub DESTROY {
     my ($self) = @_;
+    $self->meta->primary_key->cleanup_dirty($self);
     delete $session_of->{"$self"};
 }
 
