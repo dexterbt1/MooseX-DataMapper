@@ -22,7 +22,8 @@ sub execute {
     my $pk_is_composite = 0;
     if (ref($pk_spec) eq 'ARRAY') { $pk_is_composite = 1; }
     if ($pk_is_composite) {
-        $where = $t->pk;
+        my $pk = $t->pk;
+        $where = { map { $t->meta->get_attribute($_)->column() => $pk->{$_} } keys %$pk };
     }
     else {
         $where = { $pk_spec->column() => $t->pk };
@@ -30,7 +31,8 @@ sub execute {
     my ($stmt, @bind) = $self->session->sqlabs->delete( $table, $where );
     $self->session->dbixs->query( $stmt, @bind );
     if (not $pk_is_composite) {
-        $pk_spec->clear_value($t); # undef the primary key, means that the object is not in the db anymore
+        # FIXME: this is only needed if $pk is of type autoincrement/serial?
+        $pk_spec->clear_value($t); 
     }
     $t->datamapper_session( undef );
     $self->session->query_log_append( [ $stmt, @bind ] );

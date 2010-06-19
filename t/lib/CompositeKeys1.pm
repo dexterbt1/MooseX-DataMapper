@@ -7,18 +7,21 @@ has 'a' => (
     traits      => [qw/Persistent/],
     isa         => 'Int',
     is          => 'rw',
+    column      => 'z_a',
 );
 
 has 'b' => (
     traits      => [qw/Persistent/],
     isa         => 'Int',
     is          => 'rw',
+    column      => 'z_b',
 );
 
 has 'c' => (
     traits      => [qw/Persistent/],
     isa         => 'Int',
     is          => 'rw',
+    column      => 'z_c',
 );
 
 

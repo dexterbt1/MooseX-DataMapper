@@ -107,16 +107,22 @@ sub _get_resultset {
     if ($@) {
         croak "Failed SQL statement:\n\t$select_stmt\n\t".join("\n\t",@where_bind)."\n";
     }
-    #print STDERR $select_stmt,"\n\t",join("\n\t",@where_bind),"\n";
     $ds->query_log_append( [ $select_stmt, \@where_bind ] );
     return $rs;
 }
 
 
 sub _new_object {
+    # FIXME: refactor this to belong to some other class like an ObjectBuilder or something
     my ($self, $class, $row) = @_;
-    my $pk_rowfield = $class->meta->primary_key->column;
-    my $pk = $row->{$pk_rowfield};
+    #my $pk_spec = $class->meta->primary_key;
+    #my %pk_name_to_attr = (); # maps pk_attr_name1 => pk_attr
+    #if (ref($pk_spec) eq 'ARRAY') {
+    #    %pk_name_to_attr = map { $_->name => $_ } @$pk_spec;
+    #}
+    #else {
+    #    %pk_name_to_attr = ( $pk_spec->name() => $pk_spec );
+    #}
     my $o;
     my $driver_name = $self->session->dbh->get_info(17);
     {
@@ -242,13 +248,28 @@ sub first {
 sub get {
     my ($self, $o) = @_;
     # accept either an object or a primary_key value
+    my $where;
     my $pk = $o;
     if (blessed($o)) {
         $pk = $o->pk;
     }
+
     my $class = $self->class_spec->[0]; # support single table for now
-    my $pk_field = $class->meta->primary_key->name;
-    $self->static_filter({$pk_field => $pk})->limit(1);
+    my $pk_attr = $class->meta->primary_key;
+
+    if (ref($pk) eq 'HASH') {
+        (ref($pk_attr) eq 'ARRAY')
+            or croak "Cannot delete using composite primary key because class ".$class->meta->name." has a non-composite primary key";
+        # FIXME:    Overall, i think the idea of sprinkling ARRAY / HASH ref checks
+        #           is just wrong. I think this belongs to another object.
+        #           Knowledge of the primary key structure really should be somewhere else.
+        $where = { map { $class->meta->get_attribute($_)->column => $pk->{$_} } keys %$pk };
+    }
+    else {
+        $where = { $pk_attr->column() => $pk };
+    }
+
+    $self->static_filter($where)->limit(1);
     my $rs = $self->_get_resultset;
     my $row = $rs->hash;
     return $self->_new_object( $class, $row );
