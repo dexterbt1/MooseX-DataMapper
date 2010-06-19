@@ -132,7 +132,7 @@ sub _new_object {
                 $args->{$attr_name} = $attr->from_db->( $row->{$col}, $driver_name );
             }
         }
-        $o = $class->new(%$args);
+        $o = $class->meta->new_object(%$args);
         $o->datamapper_session( $self->session );
     }
     return $o;

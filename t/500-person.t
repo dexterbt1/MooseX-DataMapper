@@ -10,7 +10,6 @@ BEGIN {
 require 't/lib/Person1.pm';
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:","","", { RaiseError => 1 });
-#my $dbh = DBI->connect("DBI:mysql:database=autorun:","root","", { RaiseError => 1 });
 $dbh->do(<<"EOT");
     CREATE TABLE person (uid INTEGER PRIMARY KEY AUTOINCREMENT, cname VARCHAR(64));
 EOT

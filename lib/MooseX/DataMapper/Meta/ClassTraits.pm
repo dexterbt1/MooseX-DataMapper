@@ -169,14 +169,14 @@ sub datamapper_class_setup {
     my ($self, %p) = @_;
     my $metaclass = $self;
     # handle setup params
-    if (exists $p{-table}) { $metaclass->table($p{-table}); }
-    if (exists $p{-primary_key}) { 
-        $self->map_primary_key( $p{-primary_key}, $p{-primary_key_type} );
+    if (exists $p{'-table'}) { $metaclass->table($p{'-table'}); }
+    if (exists $p{'-primary_key'}) { 
+        $self->map_primary_key( $p{'-primary_key'}, $p{'-primary_key_type'} );
     }
-    if (exists $p{-auto_pk}) {
-        (not exists $p{-primary_key})
+    if (exists $p{'-auto_pk'}) {
+        (not exists $p{'-primary_key'})
             or croak "Cannot apply -auto_pk, conflicts with -primary_key definition";
-        $self->_add_auto_pk( $p{-auto_pk} );
+        $self->_add_auto_pk( $p{'-auto_pk'} );
     }
     
     # --- do setup

@@ -8,6 +8,7 @@ lib/MooseX/DataMapper/Meta/Role.pm
 lib/MooseX/DataMapper/Meta/TupleBuilder.pm
 lib/MooseX/DataMapper/PK.pm
 lib/MooseX/DataMapper/PK/Composite.pm
+lib/MooseX/DataMapper/PK/Natural.pm
 lib/MooseX/DataMapper/PK/Serial.pm
 lib/MooseX/DataMapper/QuerySet.pm
 lib/MooseX/DataMapper/QuerySet/Filter.pm
@@ -24,10 +25,13 @@ README.markdown
 t/310-attr-dup.t
 t/310-attr-rw.t
 t/310-meta-override.t
-t/311-composite-keys-1.t
+t/310-natural-pk.t
+t/311-composite-pk.t
+t/311-composite-pk2.t
 t/320-datetime1.t
 t/350-fk-save.t
 t/351-fk-assoc.t
+t/352-fk-composite.t
 t/500-musicdb.t
 t/500-person.t
 t/lib/CompanyEmp.pm
