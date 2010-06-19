@@ -77,7 +77,7 @@ Overview
 
     __PACKAGE__->meta->datamapper_class_setup(
         -table              => 'cd',
-        -auto_pk            => 1,   # generates an serial/auto-increment pk called 'id'
+        -auto_pk            => 'cdid',   # generates an serial/auto-increment pk called 'cdid'
     );
 
 
@@ -256,7 +256,7 @@ Requirements
 Notes
 -----
 
-Why yet another ORM? This project stemmed from getting tired of all my duplicated mapping code when I try to marry Moose and DBIx::DataModel. Moose metaclass programming is indeed very powerful, that with it, I simply tried to hack away this code in my few days of vacation time. This will certainly be useful me and I hope others will find it useful as well.
+Why yet another ORM? This project stemmed from getting tired of all my duplicated mapping code when I try to marry Moose and DBIx::DataModel. Moose metaclass programming is indeed very powerful, that with it, I simply tried to hack away this code in my few days of vacation time. This will certainly be useful to me and I hope others will find it useful as well.
 
 This project aims to be a clean and practical object-relational persistence solution. It is by no means the single solution for every ORM problem, nor replaces mature and feature-rich ORMs (like DBIx::Class). What it offers is a simple declarative layer for persisting/querying your mapped Moose objects. I acknowledge that we are standing on the shoulders of giants. 
 
