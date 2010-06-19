@@ -36,6 +36,13 @@ isnt $jobs->id, undef;
 
 is $jobs->company->pk, $apple->pk;
 
+my $new_ds = MooseX::DataMapper->connect($dbh); # even if reusing the same dbh, this is treated as a new session
+
+dies_ok {
+    $new_ds->save_one( Employee->new( name => 'John Doe', company => $apple ) ); # apple lives in a different session
+} 'diff session';
+
+
 ok 1;
 
 1;

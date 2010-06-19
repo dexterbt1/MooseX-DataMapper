@@ -86,6 +86,14 @@ sub save_deep {
 
 sub save_one {
     my ($self, $i) = @_;
+    foreach my $i_fk_attr (@{$i->meta->foreignkey_attributes}) {
+        # just check that the foreign keys are bound to the same session
+        if ($i_fk_attr->has_value($i)) {
+            my $i_fk = $i_fk_attr->get_value($i);
+            ($i_fk->datamapper_session == $self)
+                or croak "Cannot save a object with session-bound foreign key objects into a different session";
+        }
+    }
     eval {
         my $pk = $i->pk;
         if (defined($pk) && ref($pk) eq 'HASH') {
