@@ -17,7 +17,7 @@ has 'attr' => (
     trigger     => sub {
         my ($self, $v) = @_;
         $v->is_required
-            or die "Attribute mapped to a Simple Primary Key should be set to required=1";
+            or die "Attribute (".$v->name.") mapped to a Natural Primary Key should be set to required=1";
     },
 );
 
@@ -38,6 +38,7 @@ my $dirty_natkeys = { };
 sub BUILD {
     my ($self) = @_;
     my $attr = $self->attr;
+    my $attr_name = $attr->name;
     my $method = $attr->writer || $attr->accessor || $attr->name;
     $self->source_meta->add_before_method_modifier( $method, sub {
         my $obj = shift @_;
@@ -45,7 +46,8 @@ sub BUILD {
             # setter called, we need to save the old value,
             # this old value will later be used as the dirty column value
             # ... this also mark object as dirty
-            $dirty_natkeys->{"$obj"} = $attr->get_value($obj);
+            my $dirtkey = $attr_name.'-'."$obj";
+            $dirty_natkeys->{$dirtkey} = $attr->get_value($obj);
         }
     });
 }
@@ -63,20 +65,23 @@ sub get_instance_value {
 
 sub is_dirty { 
     my ($self, $obj) = @_;
-    (exists $dirty_natkeys->{"$obj"}) ? 1 : 0;
+    my $dirtkey = $self->attr->name().'-'."$obj";
+    (exists $dirty_natkeys->{$dirtkey}) ? 1 : 0;
 }
 
 sub cleanup_dirty {
     my ($self, $obj) = @_;
-    delete $dirty_natkeys->{"$obj"};
+    my $dirtkey = $self->attr->name().'-'."$obj";
+    delete $dirty_natkeys->{$dirtkey};
 }
 
 sub get_column_condition {
     my ($self, $obj) = @_;
     my $pk_val = $obj;
+    my $dirtkey = $self->attr->name().'-'."$obj";
     if (blessed $obj) {
-        $pk_val = (exists $dirty_natkeys->{"$obj"}) 
-                ? $dirty_natkeys->{"$obj"}
+        $pk_val = (exists $dirty_natkeys->{$dirtkey}) 
+                ? $dirty_natkeys->{$dirtkey}
                 : $self->attr->get_value($obj);
     }
     return { $self->attr->column() => $pk_val };

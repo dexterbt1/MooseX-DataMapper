@@ -74,7 +74,12 @@ like $ds->queries->[-1]->[0], qr/UPDATE/;
 is scalar @{$ds->objects('Person')->all}, 1; # still one record
 
 # we're making sure it's the correct updated person
-$p = $ds->objects('Person')->get( 'John Doe' );
+
+$p = $ds->objects('Person')->get( 'John Doe' ); # single val
+is $p->name, 'John Doe'; 
+
+# we're making sure it's the correct updated person
+$p = $ds->objects('Person')->get( $p ); # obj
 is $p->name, 'John Doe'; 
 
 # we're making sure it's the correct updated person

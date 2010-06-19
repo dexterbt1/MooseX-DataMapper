@@ -8,6 +8,7 @@ has 'a' => (
     isa         => 'Int',
     is          => 'rw',
     column      => 'z_a',
+    required    => 1,
 );
 
 has 'b' => (
@@ -15,6 +16,7 @@ has 'b' => (
     isa         => 'Int',
     is          => 'rw',
     column      => 'z_b',
+    required    => 1,
 );
 
 has 'c' => (

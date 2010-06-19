@@ -113,18 +113,10 @@ sub _get_resultset {
 
 
 sub _new_object {
-    # FIXME: refactor this to belong to some other class like an ObjectBuilder or something
+    # FIXME: perhaps we can refactor this since it belongs to some other class like an ObjectBuilder or similar (?)
     my ($self, $class, $row) = @_;
-    # FIXME: caller methods, those returning objects should throw an Exception undef row scenario, e.g. DoesNotExist exception
+    # FIXME: caller methods, those returning objects ideally should throw an Exception undef row scenario, e.g. DoesNotExist exception
     return if (not(defined $row));
-    #my $pk_spec = $class->meta->primary_key;
-    #my %pk_name_to_attr = (); # maps pk_attr_name1 => pk_attr
-    #if (ref($pk_spec) eq 'ARRAY') {
-    #    %pk_name_to_attr = map { $_->name => $_ } @$pk_spec;
-    #}
-    #else {
-    #    %pk_name_to_attr = ( $pk_spec->name() => $pk_spec );
-    #}
     my $o;
     my $driver_name = $self->session->dbh->get_info(17);
     {

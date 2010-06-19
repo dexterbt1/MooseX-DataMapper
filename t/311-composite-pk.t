@@ -4,7 +4,6 @@ use Test::Exception;
 
 BEGIN {
     use_ok 'DBI';
-    use_ok 'DBIx::Simple';
     use_ok 'MooseX::DataMapper';
 }
 
