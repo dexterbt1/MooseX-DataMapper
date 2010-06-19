@@ -32,6 +32,8 @@ lives_ok {      $session->save( X->new( a => 1, b => 2, c => 1 ) );     } 'save-
 lives_ok {      $session->save( $x1 );                                  } 'save-ok-update';
 like $session->queries->[-1]->[0], qr/UPDATE/i, 'x1-update-ok';
 
+lives_ok {      $session->delete( $x1 );                                } 'del-ok';
+
 ok 1;
 ok 1;
 

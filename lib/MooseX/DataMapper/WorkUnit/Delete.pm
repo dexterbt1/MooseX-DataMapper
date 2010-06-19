@@ -17,14 +17,22 @@ sub execute {
     my ($self) = @_;
     my $t = $self->target;
     my $table = $t->meta->table;
-    my $pk_attr = $t->meta->primary_key;
-    my ($stmt, @bind) = $self->session->sqlabs->delete( $table, { ''.$pk_attr->column() => $t->pk } );
-    my $dbixs = $self->session->dbixs;
-    #print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
-    $dbixs->query( $stmt, @bind );
-    $pk_attr->clear_value($t); # undef the primary key, means that the object is not in the db anymore
+    my $pk_spec = $t->meta->primary_key;
+    my $where;
+    my $pk_is_composite = 0;
+    if (ref($pk_spec) eq 'ARRAY') { $pk_is_composite = 1; }
+    if ($pk_is_composite) {
+        $where = $t->pk;
+    }
+    else {
+        $where = { $pk_spec->column() => $t->pk };
+    }
+    my ($stmt, @bind) = $self->session->sqlabs->delete( $table, $where );
+    $self->session->dbixs->query( $stmt, @bind );
+    if (not $pk_is_composite) {
+        $pk_spec->clear_value($t); # undef the primary key, means that the object is not in the db anymore
+    }
     $t->datamapper_session( undef );
-    #print STDERR $stmt,"\n\t",join("\n\t",@bind),"\n";
     $self->session->query_log_append( [ $stmt, @bind ] );
 }
 
