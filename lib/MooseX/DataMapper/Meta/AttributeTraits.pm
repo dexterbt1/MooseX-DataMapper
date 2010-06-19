@@ -72,7 +72,8 @@ sub init_ref_to {
         or croak "ref_to attribute refers to an invalid/non-persistent fk_class ($fk_class)";
     if (not defined $attr_name) {
         # implicitly use the primary key of the fk_class
-        $attr_name = $fk_class->meta->primary_key->name;
+        # FIXME: hardwire support for SERIAL primary, for now
+        $attr_name = $fk_class->meta->primary_key->attr->name;
     }
     my $attr = $fk_class->meta->get_attribute($attr_name);
     (defined $attr)

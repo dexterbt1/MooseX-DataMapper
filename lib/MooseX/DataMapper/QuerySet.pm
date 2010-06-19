@@ -247,27 +247,12 @@ sub first {
 
 sub get {
     my ($self, $o) = @_;
-    # accept either an object or a primary_key value
-    my $where;
-    my $pk = $o;
-    if (blessed($o)) {
-        $pk = $o->pk;
-    }
+    # accept either an object or a primary_key-style (can be a scalar OR a hashref) value
 
     my $class = $self->class_spec->[0]; # support single table for now
-    my $pk_attr = $class->meta->primary_key;
+    my $class_pk = $class->meta->primary_key;
 
-    if (ref($pk) eq 'HASH') {
-        (ref($pk_attr) eq 'ARRAY')
-            or croak "Cannot delete using composite primary key because class ".$class->meta->name." has a non-composite primary key";
-        # FIXME:    Overall, i think the idea of sprinkling ARRAY / HASH ref checks
-        #           is just wrong. I think this belongs to another object.
-        #           Knowledge of the primary key structure really should be somewhere else.
-        $where = { map { $class->meta->get_attribute($_)->column => $pk->{$_} } keys %$pk };
-    }
-    else {
-        $where = { $pk_attr->column() => $pk };
-    }
+    my $where = $class_pk->get_column_condition( $o );
 
     $self->static_filter($where)->limit(1);
     my $rs = $self->_get_resultset;

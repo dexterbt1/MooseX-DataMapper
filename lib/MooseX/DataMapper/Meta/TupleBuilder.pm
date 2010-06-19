@@ -30,7 +30,8 @@ sub get_tuples {
         my $value = $attr->get_value($i);
         # for composite keys, expect
         if (not $has_composite_pk) {
-            if ( ($metaclass->primary_key->name eq $attr->name) and (not defined $value) ) {
+            my $pk = $metaclass->primary_key;
+            if ( ($pk->is_serial) and ($pk->attr->name eq $attr->name) and (not defined $value) ) {
                 next; # skip undefined primary keys, for single-column keys
             }
         }

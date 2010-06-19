@@ -16,6 +16,7 @@ has 'target' => (
 sub execute {
     my ($self) = @_;
     my $t = $self->target;
+    my $pk_spec = $t->meta->primary_key;
     my $tuples = $t->meta->get_tuples( $t, $self->session, $t->meta->table );
     foreach my $table (keys %$tuples) {
         foreach my $row (@{$tuples->{$table}}) {
@@ -23,12 +24,8 @@ sub execute {
             my $dbixs = $self->session->dbixs;
             $dbixs->query( $stmt, @bind );
             # automatically assign the primary key field with the last insert id
-            my $pk_spec = $t->meta->primary_key;
-            if (ref($pk_spec) eq 'ARRAY') {
-                # nop, do nothing
-            }
-            else {
-                $pk_spec->set_value( $t, $dbixs->last_insert_id(undef, undef, $table, undef) );
+            if ($pk_spec->is_serial) {
+                $pk_spec->set_serial( $t, $dbixs->last_insert_id(undef, undef, $table, undef) );
             }
             $t->datamapper_session( $self->session );
             $self->session->query_log_append( [ $stmt, @bind ] );

@@ -241,7 +241,7 @@ Comparison with similar modules
     * DM, by implementation, uses string-manipulation to generate SQL (for now).
          Fey::ORM uses Fey, which is a different approach to SQL generation.
 #### KiokuDB
-    * KiokuDB is a object persistence solution, not an object-relational mapper.
+    * KiokuDB is an object persistence solution, not an object-relational mapper.
     * KiokuDB can be an attractive solution if you'd simple want to persist your Moose object graph 
         and your use-case does not require you to map classes <=> tables, attributes <=> columns.
 

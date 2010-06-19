@@ -19,20 +19,7 @@ sub datamapper_session {
 # returns a single scalar value if a single key, otherwise a hashref
 sub pk {
     my $self = shift @_;
-    my $pk_spec = $self->meta->primary_key;
-    if (ref($pk_spec) eq 'ARRAY') {
-        my $out = { };
-        foreach my $pk_attr (@$pk_spec) {
-            my $val = $pk_attr->get_value($self);
-            if (not defined $val) {
-                undef $out;
-                last;
-            }
-            $out->{$pk_attr->name} = $val;
-        }
-        return $out;
-    }
-    return $pk_spec->get_value($self);
+    return $self->meta->primary_key->get_instance_value( $self );
 }
 
 sub DESTROY {

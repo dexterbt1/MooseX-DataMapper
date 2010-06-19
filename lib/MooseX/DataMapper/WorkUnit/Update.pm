@@ -20,19 +20,10 @@ sub execute {
         foreach my $row (@{$tuples->{$table}}) {
             # remove the primary key from the data hash
             my $pk_spec = $t->meta->primary_key;
-            my $where = { };
-            if (ref($pk_spec) eq 'ARRAY') {
-                foreach my $pk_attr (@$pk_spec) {
-                    # for now, assume column_spec is an array of strings (column names)
-                    my $pk_col = $pk_attr->column;
-                    $where->{$pk_col} = delete($row->{$pk_col});
-                }
+            my $where = $pk_spec->get_column_condition( $t );
+            foreach my $pk_col (%$where) {
+                delete $row->{$pk_col};
             }
-            else {
-                # expect $pk_column_spec as a plain string referring to a single column
-                my $pk_col = $pk_spec->column;
-                $where->{$pk_col} = delete($row->{$pk_col});
-            };
             my ($stmt, @bind) = $self->session->sqlabs->update( $table, $row, $where );
             my $dbixs = $self->session->dbixs;
             $dbixs->query( $stmt, @bind );

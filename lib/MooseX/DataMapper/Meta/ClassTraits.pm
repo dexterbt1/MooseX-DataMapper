@@ -1,13 +1,15 @@
 use strict;
 package MooseX::DataMapper::Meta::Class::Trait::DataMapper::Class;
 use Moose::Role;
+use MooseX::DataMapper::PK::Serial;
+use MooseX::DataMapper::PK::Composite;
 use MooseX::DataMapper::Meta::Role;
 use MooseX::DataMapper::Meta::TupleBuilder;
 use Carp;
 
 has 'primary_key' => (
     is              => 'rw',
-    does            => 'MooseX::DataMapper::Meta::Attribute::Trait::Persistent|ArrayRef[MooseX::DataMapper::Meta::Attribute::Trait::Persistent]',
+    does            => 'MooseX::DataMapper::PK',
 );
 
 has 'table' => (
@@ -156,7 +158,10 @@ sub map_primary_key {
     (defined $spec)
         or croak "Undefined primary key spec";
     my $out;
+    # spec allows for an arrayref, then coerced into a proper primary key type,
+    # TODO: could benefit from a factory (?)
     if (defined($spec) && ref($spec) eq 'ARRAY') {
+        # coerce spec as composite
         my @new_spec = ();
         foreach my $attr_name (@$spec) {
             ($self->has_attribute($attr_name))
@@ -164,12 +169,12 @@ sub map_primary_key {
             my $attr = $self->get_attribute($attr_name);
             push @new_spec, $attr;
         }
-        $out = \@new_spec;
+        $out = MooseX::DataMapper::PK::Composite->new( attrs => \@new_spec );
     }
     else {
         ($self->has_attribute($spec))
             or croak "Unable to resolve attribute $spec";
-        $out = $self->get_attribute($spec);
+        $out = MooseX::DataMapper::PK::Serial->new( attr => $self->get_attribute($spec) );
     }
     $self->primary_key( $out );
 }

@@ -6,6 +6,9 @@ lib/MooseX/DataMapper/Meta/AttributeTraits.pm
 lib/MooseX/DataMapper/Meta/ClassTraits.pm
 lib/MooseX/DataMapper/Meta/Role.pm
 lib/MooseX/DataMapper/Meta/TupleBuilder.pm
+lib/MooseX/DataMapper/PK.pm
+lib/MooseX/DataMapper/PK/Composite.pm
+lib/MooseX/DataMapper/PK/Serial.pm
 lib/MooseX/DataMapper/QuerySet.pm
 lib/MooseX/DataMapper/QuerySet/Filter.pm
 lib/MooseX/DataMapper/QuerySet/LogicalOperator.pm
@@ -34,4 +37,3 @@ t/lib/DateTime1.pm
 t/lib/MetaOverride.pm
 t/lib/Person1.pm
 t/lib/XPointRect.pm
-work.vim

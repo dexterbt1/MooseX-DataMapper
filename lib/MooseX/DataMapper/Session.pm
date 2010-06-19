@@ -91,36 +91,19 @@ sub save_one {
         if ($i_fk_attr->has_value($i)) {
             my $i_fk = $i_fk_attr->get_value($i);
             ($i_fk->datamapper_session == $self)
-                or croak "Cannot save a object with session-bound foreign key objects into a different session";
+                or croak "Cannot save an object with session-bound foreign key objects into a different session";
         }
     }
     eval {
-        my $pk = $i->pk;
-        if (defined($pk) && ref($pk) eq 'HASH') {
-            # composite key handling, ... this probably belong to somewhere else
-            if (defined $i->datamapper_session) {
-                ($i->datamapper_session == $self)
-                    or croak "Cannot save a session-bound object into a different session";
-                # update
-                MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
-            }
-            else {
-                # not pk yet, insert
-                MooseX::DataMapper::WorkUnit::Insert->new( session => $self, target => $i )->execute;
-            }
+        if (defined $i->datamapper_session) {
+            ($i->datamapper_session == $self)
+                or croak "Cannot save a session-bound object into a different session";
+            # update
+            MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
         }
         else {
-            # non composite key handling
-            if (defined $i->datamapper_session) {
-                ($i->datamapper_session == $self) # assert equal session
-                    or croak "Cannot save an already session-bound object into a different session";
-                # update
-                MooseX::DataMapper::WorkUnit::Update->new( session => $self, target => $i )->execute;
-            }
-            else {
-                # not pk yet, insert
-                MooseX::DataMapper::WorkUnit::Insert->new( session => $self, target => $i )->execute;
-            }
+            # not pk yet, insert
+            MooseX::DataMapper::WorkUnit::Insert->new( session => $self, target => $i )->execute;
         }
     };
     if ($@) { croak $@; }
@@ -135,12 +118,9 @@ sub delete {
 
 sub delete_one {
     my ($self, $i) = @_;
-    if (defined $i->pk) {
-        MooseX::DataMapper::WorkUnit::Delete->new( session => $self, target => $i )->execute;
-    }
-    else {
-        croak "Cannot save unbound object";
-    }
+    ($i->datamapper_session) 
+        or croak "Cannot save unbound object";
+    MooseX::DataMapper::WorkUnit::Delete->new( session => $self, target => $i )->execute;
 }
 
 

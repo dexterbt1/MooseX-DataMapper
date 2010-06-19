@@ -49,9 +49,13 @@ dies_ok {
 lives_ok {
     $x1_copy = $session->objects('X')->get( { a => 1, b => 2 } );
 }  'get by hash pk';
+is_deeply $x1_copy->pk, { a => 1, b => 2 };
 is $x1_copy->a, 1;
 is $x1_copy->b, 2;
 is $x1_copy->c, 1;
+
+my $x1_copy2 = $session->objects('X')->get( $x1_copy->pk );
+is_deeply $x1_copy2->pk, $x1_copy->pk;
 
 $session->save( X->new( a => 5, b => 6, c => 7 ) );
 $session->save( X->new( a => 8, b => 9, c => 10 ) );
