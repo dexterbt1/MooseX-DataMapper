@@ -197,7 +197,8 @@ Features (so far)
 * Basic single class/table CRUD
 * Chainable DSL-like query API based on attributes
 * Support for ForeignKey with assocation (reverse) link
-* Custom ColumnHandlers for inflation/deflation of more complex objects
+* Support for Composite Primary Keys
+* Custom ColumnHandlers for inflation/deflation of more complex objects (VO)
 
 
 TODO / Upcoming:
@@ -221,23 +222,28 @@ Comparison with similar modules
     * Your Moose-class is your schema. 
     * Your schema is usable over multiple sessions (connections).
     * You map your classes to tables, attributes to columns.
+    * You map keys to attributes
     * DM aims to provide sensible defaults when mapping, and allow overrides if necessary.
     * Use your class names and attribute names when querying.
-        * Worry less about the actual names of table columns
+        * In your logic, worry less about the actual database identifiers (table names, columns)
+        * Switch mappings of tables / columns / keys without changing class and existing queries.
     * Two flavors of query expressions
         * SQL::Abstract - which many ORMs support already
         * ($stmt, @bind) - IMO is more flexible, albeit allows one to write RDBMS specific expressions.
 #### DBIx::Class
     * DM tries to play well with Moose-based classes.
-    * TypeConstraints, Accessors, Modifiers, etc. should work transparently.
-    * Less integration code, less verbose class declarations.
+    * DM should allow you to keep (re)using your TypeConstraints, Accessors, Modifiers, etc.
+    * DM should allow for less integration code, less verbose mapping/class declarations.
 #### Fey::ORM
     * Fey::ORM tries to map tables to classes, DM maps classes to tables.
     * Workflow: Fey::ORM tries to create attributes based on your table columns, 
-        while with DM, you write your attributes and map them to table columns.
+        while with DM, you write your attributes and then map them to table columns.
     * DM, by implementation, uses string-manipulation to generate SQL (for now).
          Fey::ORM uses Fey, which is a different approach to SQL generation.
-
+#### KiokuDB
+    * KiokuDB is a object persistence solution, not an object-relational mapper.
+    * KiokuDB can be an attractive solution if you'd simple want to persist your Moose object graph 
+        and your use-case does not require you to map classes <=> tables, attributes <=> columns.
 
 
 Requirements
